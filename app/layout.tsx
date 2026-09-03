@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 export const metadata: Metadata = {
-  metadataBase: new URL('https://tonight-dinner-notebook.sites.chatgpt.com'),
+  metadataBase: new URL('https://tonight-dinner-notebook.j99wng.chatgpt.site'),
   openGraph: {
     title: 'Tonight · 新志興',
     description: 'A little order in the dinner rush.',
