@@ -933,7 +933,7 @@ h2 span {
     bottom: 0;
     left: 0;
     transform: none;
-    translate: none;
+    translate: 0 0 !important;
     max-width: 100%;
     width: 100%;
     padding: 27px 20px max(25px, env(safe-area-inset-bottom));
