@@ -714,6 +714,8 @@ h2 span {
   max-width: 450px;
   max-height: 90dvh;
   overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
   background: #fffef9;
   border-radius: 20px;
 }
@@ -931,11 +933,12 @@ h2 span {
     bottom: 0;
     left: 0;
     transform: none;
+    translate: none;
     max-width: 100%;
     width: 100%;
     padding: 27px 20px max(25px, env(safe-area-inset-bottom));
     border-radius: 22px 22px 0 0;
-    max-height: 92dvh;
+    max-height: calc(100dvh - max(16px, env(safe-area-inset-top)));
   }
   .size-options {
     gap: 5px;
