@@ -1,8 +1,10 @@
 export type TableStatus = 'available' | 'occupied' | 'reserved' | 'cleaning';
+export type SeatingArea = 'indoor' | 'outdoor';
 export interface RestaurantTable {
   id: string;
   name: string;
   capacity: number;
+  area: SeatingArea;
   status: TableStatus;
   currentPartyId?: string;
   seatedAt?: number;
@@ -12,8 +14,9 @@ export interface QueueEntry {
   id: string;
   queueNumber: string;
   customerName?: string;
-  phone?: string;
+  phone: string;
   partySize: number;
+  smoking: boolean;
   joinedAt: number;
   estimatedWaitMinutes?: number;
   status: 'waiting' | 'notified' | 'seated' | 'cancelled' | 'no-show';
@@ -22,8 +25,9 @@ export interface QueueEntry {
 export interface Reservation {
   id: string;
   customerName: string;
-  phone?: string;
+  phone: string;
   partySize: number;
+  smoking: boolean;
   date: string;
   time: string;
   notes?: string;
@@ -31,7 +35,7 @@ export interface Reservation {
   assignedTableId?: string;
 }
 export interface ServiceState {
-  version: 1;
+  version: 2;
   startedAt: number;
   nextNumber: number;
   tables: RestaurantTable[];
@@ -39,58 +43,59 @@ export interface ServiceState {
   reservations: Reservation[];
 }
 export const SERVICE_DATE = '2026-09-03';
+const phones = [
+  '9123 1122',
+  '9234 2233',
+  '9345 3344',
+  '9456 4455',
+  '9567 5566',
+  '9678 6677',
+  '9789 7788',
+  '9890 8899',
+];
 export function seed(now = Date.now()): ServiceState {
   const occupied = ['Leung', 'Mak', 'Tang'].map(
     (name, i): QueueEntry => ({
       id: `d${i}`,
       queueNumber: `A0${i + 7}`,
       customerName: name,
+      phone: phones[i],
       partySize: [2, 4, 6][i],
+      smoking: [true, false, false][i],
       joinedAt: now - (80 - i * 10) * 60000,
       status: 'seated',
       assignedTableId: ['T2', 'T5', 'T7'][i],
     }),
   );
+  const table = (
+    id: string,
+    capacity: number,
+    area: SeatingArea,
+    status: TableStatus,
+    extra: Partial<RestaurantTable> = {},
+  ): RestaurantTable => ({ id, name: id, capacity, area, status, ...extra });
   return {
-    version: 1,
+    version: 2,
     startedAt: now,
     nextNumber: 17,
     tables: [
-      { id: 'T1', name: 'T1', capacity: 2, status: 'available' },
-      {
-        id: 'T2',
-        name: 'T2',
-        capacity: 2,
-        status: 'occupied',
+      table('T1', 2, 'outdoor', 'available'),
+      table('T2', 2, 'outdoor', 'occupied', {
         currentPartyId: 'd0',
         seatedAt: now - 38 * 60000,
-      },
-      { id: 'T3', name: 'T3', capacity: 4, status: 'available' },
-      {
-        id: 'T4',
-        name: 'T4',
-        capacity: 4,
-        status: 'reserved',
-        reservationId: 'r1',
-      },
-      {
-        id: 'T5',
-        name: 'T5',
-        capacity: 4,
-        status: 'occupied',
+      }),
+      table('T3', 4, 'outdoor', 'available'),
+      table('T4', 4, 'outdoor', 'reserved', { reservationId: 'r1' }),
+      table('T5', 4, 'indoor', 'occupied', {
         currentPartyId: 'd1',
         seatedAt: now - 52 * 60000,
-      },
-      { id: 'T6', name: 'T6', capacity: 6, status: 'cleaning' },
-      {
-        id: 'T7',
-        name: 'T7',
-        capacity: 6,
-        status: 'occupied',
+      }),
+      table('T6', 6, 'indoor', 'cleaning'),
+      table('T7', 6, 'indoor', 'occupied', {
         currentPartyId: 'd2',
         seatedAt: now - 24 * 60000,
-      },
-      { id: 'T8', name: 'T8', capacity: 8, status: 'available' },
+      }),
+      table('T8', 8, 'indoor', 'available'),
     ],
     queue: [
       ...occupied,
@@ -99,7 +104,9 @@ export function seed(now = Date.now()): ServiceState {
           id: `q${i}`,
           queueNumber: `A${12 + i}`,
           customerName: name,
+          phone: phones[i + 3],
           partySize: [4, 2, 6, 3, 5][i],
+          smoking: [false, true, false, false, true][i],
           joinedAt: now - [18, 11, 9, 6, 3][i] * 60000,
           estimatedWaitMinutes: [10, 10, 20, 15, 25][i],
           status: 'waiting',
@@ -112,16 +119,19 @@ export function seed(now = Date.now()): ServiceState {
         customerName: 'Wong',
         phone: '9123 4567',
         partySize: 4,
+        smoking: true,
         date: SERVICE_DATE,
         time: '19:30',
-        notes: 'By the entrance, if possible',
+        notes: 'Outside, by the entrance if possible',
         status: 'upcoming',
         assignedTableId: 'T4',
       },
       {
         id: 'r2',
         customerName: 'Lee',
+        phone: '9234 5678',
         partySize: 6,
+        smoking: false,
         date: SERVICE_DATE,
         time: '20:00',
         notes: 'Family dinner · one child',
@@ -130,7 +140,9 @@ export function seed(now = Date.now()): ServiceState {
       {
         id: 'r3',
         customerName: 'Ho',
+        phone: '9345 6789',
         partySize: 2,
+        smoking: false,
         date: SERVICE_DATE,
         time: '20:30',
         status: 'upcoming',
@@ -148,7 +160,9 @@ export function suitableTables(
   state: ServiceState,
   size: number,
   reservationId?: string,
+  smoking = false,
 ) {
+  const preferred: SeatingArea = smoking ? 'outdoor' : 'indoor';
   return state.tables
     .filter(
       (t) =>
@@ -160,6 +174,7 @@ export function suitableTables(
       (a, b) =>
         Number(b.reservationId === reservationId && !!reservationId) -
           Number(a.reservationId === reservationId && !!reservationId) ||
+        Number(b.area === preferred) - Number(a.area === preferred) ||
         a.capacity - b.capacity,
     );
 }
@@ -181,6 +196,7 @@ export function seatParty(
       state,
       party.partySize,
       kind === 'reservation' ? id : undefined,
+      party.smoking,
     ).some((t) => t.id === tableId)
   )
     return state;

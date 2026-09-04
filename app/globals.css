@@ -1004,3 +1004,84 @@ h2 span {
     font-weight: 600;
   }
 }
+.header-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.language-switch {
+  display: flex;
+  background: #eceee5;
+  border-radius: 9px;
+  padding: 3px;
+}
+.language-switch button {
+  border: 0;
+  background: transparent;
+  color: #657063;
+  min-width: 35px;
+  min-height: 34px;
+  border-radius: 7px;
+  font-size: 11px;
+}
+.language-switch button[aria-pressed='true'] {
+  background: #fffef9;
+  color: #27533d;
+  font-weight: 700;
+  box-shadow: 0 1px 5px #20332612;
+}
+.smoking-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 10px;
+}
+.smoking-options button[data-slot='button'] {
+  min-height: 48px;
+}
+.preference-note {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: #6d755f;
+  margin-top: 5px;
+}
+.detail-block.compact {
+  padding: 16px;
+}
+.table-card .capacity {
+  white-space: nowrap;
+}
+@media (max-width: 760px) {
+  .header-actions {
+    gap: 8px;
+  }
+  .language-switch button {
+    min-width: 31px;
+    min-height: 32px;
+  }
+  .service-pill {
+    display: none;
+  }
+  .brand > div:nth-child(2) {
+    min-width: 0;
+  }
+  .brand strong {
+    white-space: nowrap;
+  }
+  .preference-note {
+    font-size: 9px;
+  }
+  .queue-card .preference-note {
+    max-width: 150px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .smoking-options button[data-slot='button'] {
+    font-size: 12px;
+    padding: 0 8px;
+  }
+}

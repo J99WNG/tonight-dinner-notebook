@@ -23,18 +23,20 @@ The generated React/TypeScript Sites starter uses Vinext on Vite and Tailwind CS
 - `components/ui/`: only the three used scaffold primitives: Button, Dialog and Input.
 - `lib/restaurant.ts`: TypeScript models, realistic seed data, table suitability and atomic seating transition.
 - `lib/storage.ts`: isolated localStorage adapter with version checks and fallback.
+- `lib/i18n.ts`: English, Traditional Chinese and Simplified Chinese interface copy.
 - `app/globals.css`: visual tokens, mobile layout, responsive desktop layout and reduced-motion support.
 
 ## Product decisions
 
-- Default party size is two. A walk-in needs no name or phone. The 7+ button asks for an exact size; tables cannot be overfilled.
-- Available tables are ordered by smallest fit. A reservation’s held table comes first and cannot be used for an unrelated party.
+- Default party size is two. A surname is optional for walk-ins; a phone number is required for every party. The 7+ button asks for an exact size; tables cannot be overfilled.
+- Every table is marked indoor or outdoor. Smoking parties see suitable outdoor tables first; non-smoking parties see indoor tables first. This is a preference, so the manager can still use any suitable available table.
+- Available tables are then ordered by smallest fit. A reservation’s held table comes first and cannot be used for an unrelated party.
 - A queue entry becomes seated only after an explicit table selection. The seating transition updates both records together.
 - Finishing goes to Cleaning. Mark ready is a separate manager action.
 - Undo restores the previous service state for eight seconds after an action. Reset lives in Tables and restores the busy-night seed.
 - Local storage is device/browser specific. Changes are not synced between tabs or devices. Unavailable storage leaves the app usable with a visible notice.
 - This reproducible demo starts at 19:15 on 3 September 2026; elapsed minutes advance with real time, including time while the page is closed. Reset starts a fresh service. Estimates are illustrative ranges, not a prediction engine.
-- Layouts support wrapping and Unicode names. Status strings are mapped independently from stored enum values. Full Traditional Chinese translation is intentionally deferred.
+- The EN / 繁 / 简 switch changes the operational interface and saves the device’s language choice locally. Layouts support wrapping and Unicode names.
 - An optional feature-detected `start_walk_in` WebMCP tool opens the same form; it never silently adds customers.
 
 ## Walkthrough
@@ -50,4 +52,4 @@ The generated React/TypeScript Sites starter uses Vinext on Vite and Tailwind CS
 
 No authentication, backend, messaging, payments, POS, analytics, table combining or floor-plan editor. All people and phone numbers are illustrative. Upcoming bookings can be created and edited; table capacities are fixed for this prototype.
 
-Next iteration: observe a manager using the four journeys during a simulated rush, then refine Traditional Chinese labels and wait-estimate editing from that feedback.
+Next iteration: observe a manager using the four journeys during a simulated rush, then refine Cantonese/Mandarin service vocabulary and wait-estimate editing from that feedback.

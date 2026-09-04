@@ -22,12 +22,12 @@ import {
   seed,
   suitableTables,
   seatParty,
-  statusText,
   SERVICE_DATE,
   type ServiceState,
   type Reservation,
 } from '@/lib/restaurant';
 import { loadService, saveService } from '@/lib/storage';
+import { translator, type Language } from '@/lib/i18n';
 import {
   TableCard,
   QueueCard,
@@ -62,8 +62,19 @@ export default function Home() {
   const [previous, setPrevious] = useState<ServiceState | null>(null);
   const [storageIssue, setStorageIssue] = useState(false);
   const [tableFilter, setTableFilter] = useState('all');
+  const [language, setLanguage] = useState<Language>('en');
+  const t = translator(language);
   useEffect(() => {
     const s = loadService();
+    const savedLanguage = localStorage.getItem('dai-pai-dong-language');
+    if (
+      savedLanguage === 'en' ||
+      savedLanguage === 'zh-HK' ||
+      savedLanguage === 'zh-CN'
+    ) {
+      setLanguage(savedLanguage);
+      document.documentElement.lang = savedLanguage;
+    }
     stateRef.current = s;
     setState(s);
     setNow(Date.now());
@@ -83,6 +94,11 @@ export default function Home() {
     }, 8000);
     return () => clearTimeout(timer);
   }, [toast]);
+  function changeLanguage(next: Language) {
+    setLanguage(next);
+    localStorage.setItem('dai-pai-dong-language', next);
+    document.documentElement.lang = next;
+  }
   function commit(next: ServiceState, message: string) {
     setPrevious(stateRef.current);
     stateRef.current = next;
@@ -106,6 +122,7 @@ export default function Home() {
             customerName: data.customerName,
             phone: data.phone,
             partySize: data.partySize,
+            smoking: data.smoking,
             joinedAt: Date.now(),
             estimatedWaitMinutes: 15,
             status: 'waiting',
@@ -230,6 +247,7 @@ export default function Home() {
           state,
           seatTarget.partySize,
           modal.kind === 'reservation' ? seatTarget.id : undefined,
+          seatTarget.smoking,
         )
       : [];
   const editBooking =
@@ -245,15 +263,16 @@ export default function Home() {
             tableFilter === 'all' ||
             t.status === tableFilter,
         )
-        .map((t) => (
+        .map((tableItem) => (
           <TableCard
-            key={t.id}
-            table={t}
+            key={tableItem.id}
+            table={tableItem}
             now={now}
             reservation={state.reservations.find(
-              (r) => r.id === t.reservationId,
+              (r) => r.id === tableItem.reservationId,
             )}
-            onClick={() => setModal({ type: 'table', id: t.id })}
+            onClick={() => setModal({ type: 'table', id: tableItem.id })}
+            t={t}
           />
         ))}
     </div>
@@ -270,6 +289,7 @@ export default function Home() {
       onArrive={() => arrive(r)}
       onSeat={() => setModal({ type: 'seat', id: r.id, kind: 'reservation' })}
       onEdit={() => setModal({ type: 'booking', id: r.id })}
+      t={t}
     />
   );
   return (
@@ -283,35 +303,51 @@ export default function Home() {
           <strong>新志興至尊燒鵝大王</strong>
           <small>THE DINNER NOTEBOOK</small>
         </div>
-        <span className="service-pill">
-          <i /> Service open
-        </span>
+        <div className="header-actions">
+          <div className="language-switch" aria-label="Language / 語言 / 语言">
+            {(
+              [
+                ['en', 'EN'],
+                ['zh-HK', '繁'],
+                ['zh-CN', '简'],
+              ] as const
+            ).map(([code, label]) => (
+              <button
+                key={code}
+                aria-pressed={language === code}
+                onClick={() => changeLanguage(code)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <span className="service-pill">
+            <i /> {t('service.open')}
+          </span>
+        </div>
       </header>
       <main aria-busy={!hydrated}>
         <div className="page-heading">
           <div>
-            <p className="eyebrow">THURSDAY, 3 SEPTEMBER</p>
+            <p className="eyebrow">{t('date.service')}</p>
             <h1>
-              {view}
+              {t('nav.' + view.toLowerCase())}
               <span>.</span>
             </h1>
             <p>
               {view === 'Tonight'
-                ? 'A little order in the dinner rush.'
+                ? t('tagline.tonight')
                 : view === 'Bookings'
-                  ? 'A place for everyone coming tonight.'
-                  : 'A quick look. A little less to remember.'}
+                  ? t('tagline.bookings')
+                  : t('tagline.tables')}
             </p>
           </div>
           <div className="service-time">
-            <Moon size={18} /> Dinner service <b>{clock}</b>
+            <Moon size={18} /> {t('service.dinner')} <b>{clock}</b>
           </div>
         </div>
         {storageIssue && (
-          <output className="storage-warning">
-            Changes are kept for this visit. This browser couldn’t save them for
-            your next visit.
-          </output>
+          <output className="storage-warning">{t('storage.warning')}</output>
         )}
         {view === 'Tonight' ? (
           <div className="workspace">
@@ -319,14 +355,14 @@ export default function Home() {
               <section className="table-section">
                 <div className="section-heading">
                   <h2>
-                    The tables <span>{state.tables.length}</span>
+                    {t('tables.title')} <span>{state.tables.length}</span>
                   </h2>
-                  <span className="ready-count">{ready.length} ready</span>
+                  <span className="ready-count">
+                    {t('tables.ready', { count: ready.length })}
+                  </span>
                 </div>
                 {tableGrid}
-                <p className="table-hint">
-                  Tap a table to seat a party or update its status.
-                </p>
+                <p className="table-hint">{t('tables.tap')}</p>
                 {nextBooking && (
                   <button
                     className="booking-reminder"
@@ -347,14 +383,14 @@ export default function Home() {
                       <b>
                         {nextBooking.time} · {nextBooking.customerName}
                       </b>{' '}
-                      · {nextBooking.partySize} people
+                      · {t('party.people', { count: nextBooking.partySize })}
                     </span>
                     <small>
                       {nextBooking.status === 'arrived'
-                        ? 'Arrived'
+                        ? t('action.arrived')
                         : bookingMinute(nextBooking) < serviceMinute
-                          ? 'Due now'
-                          : 'Due soon'}
+                          ? t('booking.dueNow')
+                          : t('booking.dueSoon')}
                     </small>
                     <ArrowRight size={14} />
                   </button>
@@ -363,14 +399,14 @@ export default function Home() {
               <section className="tonight-bookings">
                 <div className="section-heading">
                   <h2>
-                    Coming tonight <span>{reservations.length}</span>
+                    {t('booking.coming')} <span>{reservations.length}</span>
                   </h2>
                   <Button
                     variant="ghost"
                     onClick={() => setView('Bookings')}
                     className="text-action"
                   >
-                    All bookings <ArrowRight />
+                    {t('booking.all')} <ArrowRight />
                   </Button>
                 </div>
                 {reservations.length ? (
@@ -379,15 +415,14 @@ export default function Home() {
                       {reservations.map(bookingCard)}
                     </div>
                     <p className="table-hint">
-                      <Clock3 size={12} /> Booked tables stay held until you
-                      seat or cancel.
+                      <Clock3 size={12} /> {t('booking.held')}
                     </p>
                   </>
                 ) : (
                   <div className="empty">
                     <CalendarDays />
-                    <h3>No more bookings tonight</h3>
-                    <p>All accounted for.</p>
+                    <h3>{t('booking.none')}</h3>
+                    <p>{t('booking.accounted')}</p>
                   </div>
                 )}
               </section>
@@ -399,22 +434,22 @@ export default function Home() {
             <section className="queue-section">
               <div className="section-heading">
                 <h2>
-                  Waiting <span>{waiting.length} groups</span>
+                  {t('queue.title')}{' '}
+                  <span>{t('queue.groups', { count: waiting.length })}</span>
                 </h2>
                 <Button onClick={() => setModal({ type: 'walk-in' })}>
-                  <Plus /> Walk-in
+                  <Plus /> {t('queue.walkin')}
                 </Button>
               </div>
               {waiting.length ? (
                 <>
                   <div className="queue-intro">
                     <span className="busy-dot" />
-                    {waiting.length >= 4
-                      ? 'A busy evening'
-                      : 'Service is moving'}
+                    {waiting.length >= 4 ? t('queue.busy') : t('queue.moving')}
                     <span>
-                      {waiting.reduce((sum, q) => sum + q.partySize, 0)} people
-                      waiting
+                      {t('queue.peopleWaiting', {
+                        count: waiting.reduce((sum, q) => sum + q.partySize, 0),
+                      })}
                     </span>
                   </div>
                   <div className="queue-list">
@@ -423,26 +458,33 @@ export default function Home() {
                         key={q.id}
                         party={q}
                         now={now}
-                        fits={suitableTables(state, q.partySize).length > 0}
+                        fits={
+                          suitableTables(
+                            state,
+                            q.partySize,
+                            undefined,
+                            q.smoking,
+                          ).length > 0
+                        }
                         onSeat={() =>
                           setModal({ type: 'seat', id: q.id, kind: 'queue' })
                         }
                         onDetail={() => setModal({ type: 'queue', id: q.id })}
+                        t={t}
                       />
                     ))}
                   </div>
                   <p className="queue-note">
-                    <NotebookPen size={13} /> Arrival order shown. Seat by the
-                    best table fit.
+                    <NotebookPen size={13} /> {t('queue.order')}
                   </p>
                 </>
               ) : (
                 <div className="empty">
                   <Check />
-                  <h3>Queue’s clear</h3>
-                  <p>No one’s waiting for a table right now.</p>
+                  <h3>{t('queue.clear')}</h3>
+                  <p>{t('queue.none')}</p>
                   <Button onClick={() => setModal({ type: 'walk-in' })}>
-                    <Plus /> Add walk-in
+                    <Plus /> {t('queue.add')}
                   </Button>
                 </div>
               )}
@@ -451,16 +493,16 @@ export default function Home() {
                 variant="ghost"
                 onClick={() => setModal({ type: 'walk-in' })}
               >
-                <Plus /> Add a walk-in
+                <Plus /> {t('queue.addAnother')}
               </Button>
             </section>
           </div>
         ) : view === 'Bookings' ? (
           <section className="secondary-view">
             <div className="section-heading">
-              <h2>The booking book</h2>
+              <h2>{t('booking.book')}</h2>
               <Button onClick={() => setModal({ type: 'booking' })}>
-                <Plus /> Booking
+                <Plus /> {t('booking.add')}
               </Button>
             </div>
             {Array.from(
@@ -471,7 +513,7 @@ export default function Home() {
                 <div key={date} className="booking-day">
                   <p className="eyebrow">
                     {date === SERVICE_DATE
-                      ? 'TODAY · 3 SEPTEMBER'
+                      ? t('booking.today')
                       : new Date(date + 'T12:00:00').toLocaleDateString(
                           'en-GB',
                           { weekday: 'long', day: 'numeric', month: 'long' },
@@ -485,23 +527,23 @@ export default function Home() {
                   </div>
                   {!state.reservations.some((r) => r.date === date) && (
                     <div className="empty">
-                      <h3>No bookings today</h3>
-                      <p>Walk-ins are always welcome.</p>
+                      <h3>{t('booking.empty')}</h3>
+                      <p>{t('booking.walkins')}</p>
                     </div>
                   )}
                 </div>
               ))}
-            <p className="table-hint">
-              Tap a booking time to view details or make a change.
-            </p>
+            <p className="table-hint">{t('booking.tap')}</p>
           </section>
         ) : (
           <section className="secondary-view tables-view">
             <div className="section-heading">
-              <h2>Every table, at a glance</h2>
-              <span className="ready-count">{ready.length} ready</span>
+              <h2>{t('tables.every')}</h2>
+              <span className="ready-count">
+                {t('tables.ready', { count: ready.length })}
+              </span>
             </div>
-            <div className="table-filters" aria-label="Filter tables">
+            <div className="table-filters" aria-label={t('tables.filter')}>
               {['all', 'available', 'occupied', 'reserved', 'cleaning'].map(
                 (filter) => (
                   <Button
@@ -511,9 +553,7 @@ export default function Home() {
                     className={tableFilter === filter ? 'selected' : ''}
                     onClick={() => setTableFilter(filter)}
                   >
-                    {filter === 'all'
-                      ? 'All tables'
-                      : statusText[filter as keyof typeof statusText]}
+                    {filter === 'all' ? t('tables.all') : t('status.' + filter)}
                   </Button>
                 ),
               )}
@@ -527,31 +567,30 @@ export default function Home() {
                 </div>
               )}
             <p className="table-hint">
-              {state.tables.length} tables ·{' '}
-              {state.tables.reduce((sum, t) => sum + t.capacity, 0)} seats in
-              total
+              {t('tables.count', {
+                count: state.tables.length,
+                seats: state.tables.reduce(
+                  (sum, table) => sum + table.capacity,
+                  0,
+                ),
+              })}
             </p>
             <div className="turnover-guide">
-              <h3>Keep the evening moving</h3>
-              <p>
-                Occupied <ArrowRight size={14} /> Cleaning{' '}
-                <ArrowRight size={14} /> Ready
-              </p>
-              <small>
-                Finish a table, give it a clean, then mark it ready.
-              </small>
+              <h3>{t('demo.title')}</h3>
+              <p>{t('demo.flow')}</p>
+              <small>{t('demo.help')}</small>
             </div>
             <Button
               variant="ghost"
               className="reset-button"
               onClick={() => setModal({ type: 'reset' })}
             >
-              <RotateCcw /> Reset demo data
+              <RotateCcw /> {t('action.reset')}
             </Button>
             <p className="demo-note">
-              Sample dinner service · 3 September 2026
+              {t('demo.note')}
               <br />
-              Service starts at 19:15 and advances while you try it.
+              {t('demo.clock')}
             </p>
           </section>
         )}
@@ -568,7 +607,7 @@ export default function Home() {
             }}
           >
             <Icon size={20} />
-            <span>{name}</span>
+            <span>{t('nav.' + name.toLowerCase())}</span>
             {name === 'Bookings' &&
               state.reservations.some((r) => r.status === 'arrived') && (
                 <i className="nav-dot" />
@@ -591,7 +630,7 @@ export default function Home() {
                 }
               }}
             >
-              Undo
+              {t('action.undo')}
             </button>
           )}
           <button
@@ -604,34 +643,32 @@ export default function Home() {
       )}
       {modal?.type === 'walk-in' && (
         <Sheet
-          title="Add a walk-in"
-          description="A table starts with a party. The rest is optional."
+          title={t('form.addWalkin')}
+          description={t('form.walkinHelp')}
           onClose={() => setModal(null)}
         >
-          <PartyForm onSubmit={addWalkIn} />
+          <PartyForm onSubmit={addWalkIn} t={t} />
         </Sheet>
       )}
       {modal?.type === 'seat' && seatTarget && (
         <Sheet
-          title={`Seat ${'queueNumber' in seatTarget ? seatTarget.queueNumber : seatTarget.customerName}`}
-          description={`${seatTarget.customerName || 'Walk-in'} · ${seatTarget.partySize} people`}
+          title={`${t('queue.seat')} ${'queueNumber' in seatTarget ? seatTarget.queueNumber : seatTarget.customerName}`}
+          description={`${seatTarget.customerName || t('queue.walkin')} · ${t('party.people', { count: seatTarget.partySize })} · ${t(seatTarget.smoking ? 'party.smoking' : 'party.nonSmoking')}`}
           onClose={() => setModal(null)}
         >
           {choices.length ? (
             <>
-              <p className="choice-label">
-                SUITABLE TABLES · SMALLEST FIT FIRST
-              </p>
+              <p className="choice-label">{t('sheet.suitable')}</p>
               <div className="table-choices">
-                {choices.map((t, i) => (
+                {choices.map((choice, i) => (
                   <button
-                    key={t.id}
+                    key={choice.id}
                     onClick={() => {
                       const next = seatParty(
                         stateRef.current,
                         seatTarget.id,
                         modal.kind,
-                        t.id,
+                        choice.id,
                         Date.now(),
                       );
                       if (next === stateRef.current) {
@@ -640,42 +677,37 @@ export default function Home() {
                       }
                       commit(
                         next,
-                        `${'queueNumber' in seatTarget ? seatTarget.queueNumber : seatTarget.customerName} seated at ${t.name}`,
+                        `${'queueNumber' in seatTarget ? seatTarget.queueNumber : seatTarget.customerName} seated at ${choice.name}`,
                       );
                     }}
                   >
-                    <span className="choice-number">{t.name}</span>
+                    <span className="choice-number">{choice.name}</span>
                     <span>
-                      <b>{t.capacity} seats</b>
+                      <b>
+                        {choice.capacity} · {t('area.' + choice.area)}
+                      </b>
                       <small>
-                        {t.status === 'reserved'
+                        {choice.status === 'reserved'
                           ? 'Held for this booking'
                           : i === 0
-                            ? 'Best fit'
-                            : 'Available'}
+                            ? choice.area ===
+                              (seatTarget.smoking ? 'outdoor' : 'indoor')
+                              ? t('sheet.preferred')
+                              : t('sheet.bestFit')
+                            : t('sheet.available')}
                       </small>
                     </span>
                     <ArrowUpRight size={20} />
                   </button>
                 ))}
               </div>
-              <p className="form-footnote">
-                Choose a table to seat this party. Larger tables are available
-                if needed.
-              </p>
+              <p className="form-footnote">{t('sheet.choose')}</p>
             </>
           ) : (
             <div className="empty">
               <Users />
-              <h3>No suitable tables available</h3>
-              <p>
-                {'queueNumber' in seatTarget
-                  ? seatTarget.queueNumber
-                  : seatTarget.customerName}{' '}
-                stays{' '}
-                {modal.kind === 'queue' ? 'in the queue' : 'in your bookings'}.
-                Mark a suitable table ready, then try again.
-              </p>
+              <h3>{t('sheet.noTable')}</h3>
+              <p>{t('sheet.stays')}</p>
             </div>
           )}
           <Button
@@ -683,14 +715,14 @@ export default function Home() {
             className="wide"
             onClick={() => setModal(null)}
           >
-            Cancel
+            {t('action.cancel')}
           </Button>
         </Sheet>
       )}
       {modal?.type === 'table' && table && (
         <Sheet
-          title={`Table ${table.name}`}
-          description={`${table.capacity} seats · ${statusText[table.status]}`}
+          title={`${t('nav.tables')} ${table.name}`}
+          description={`${t('party.people', { count: table.capacity })} · ${t('area.' + table.area)} · ${t('status.' + table.status)}`}
           onClose={() => setModal(null)}
         >
           {table.status === 'occupied' ? (
@@ -698,10 +730,23 @@ export default function Home() {
               <div className="detail-block">
                 <Users />
                 <h3>
-                  {tableParty?.customerName || 'Walk-in'} ·{' '}
-                  {tableParty?.partySize || table.capacity} people
+                  {tableParty?.customerName || t('queue.walkin')} ·{' '}
+                  {t('party.people', {
+                    count: tableParty?.partySize || table.capacity,
+                  })}
                 </h3>
-                <p>Seated {minutes(table.seatedAt || now, now)} min ago</p>
+                <p>
+                  {t('detail.seatedAgo', {
+                    count: minutes(table.seatedAt || now, now),
+                  })}
+                </p>
+                <p>
+                  {tableParty &&
+                    t(
+                      tableParty.smoking ? 'party.smoking' : 'party.nonSmoking',
+                    )}{' '}
+                  · {tableParty?.phone}
+                </p>
               </div>
               <Button
                 className="wide"
@@ -725,17 +770,15 @@ export default function Home() {
                   )
                 }
               >
-                Finish table <Check />
+                {t('action.finish')} <Check />
               </Button>
-              <p className="form-footnote">
-                The table will be marked Cleaning until it’s ready again.
-              </p>
+              <p className="form-footnote">{t('sheet.cleanHelp')}</p>
             </>
           ) : table.status === 'cleaning' ? (
             <>
               <div className="detail-block">
-                <h3>A quick reset for the next party</h3>
-                <p>Once the table is clean, make it available for seating.</p>
+                <h3>{t('sheet.quickReset')}</h3>
+                <p>{t('sheet.cleanHelp')}</p>
               </div>
               <Button
                 className="wide"
@@ -751,26 +794,27 @@ export default function Home() {
                   )
                 }
               >
-                Mark ready <Check />
+                {t('action.ready')} <Check />
               </Button>
             </>
           ) : table.status === 'reserved' && tableBooking ? (
             <>
               <div className="detail-block">
                 <h3>
-                  {tableBooking.customerName} · {tableBooking.partySize} people
+                  {tableBooking.customerName} ·{' '}
+                  {t('party.people', { count: tableBooking.partySize })}
                 </h3>
                 <p>
                   {tableBooking.time} ·{' '}
                   {tableBooking.status === 'arrived'
-                    ? 'Arrived'
-                    : 'Upcoming booking'}
+                    ? t('action.arrived')
+                    : t('status.upcoming')}
                 </p>
                 <p>{tableBooking.notes}</p>
               </div>
               {tableBooking.status === 'upcoming' ? (
                 <Button className="wide" onClick={() => arrive(tableBooking)}>
-                  Mark arrived
+                  {t('action.arrived')}
                 </Button>
               ) : (
                 <Button
@@ -783,7 +827,7 @@ export default function Home() {
                     })
                   }
                 >
-                  Seat {tableBooking.customerName} <ArrowUpRight />
+                  {t('queue.seat')} {tableBooking.customerName} <ArrowUpRight />
                 </Button>
               )}
               <Button
@@ -792,12 +836,12 @@ export default function Home() {
                   setModal({ type: 'booking', id: tableBooking.id })
                 }
               >
-                Booking details
+                {t('action.details')}
               </Button>
             </>
           ) : (
             <>
-              <p className="choice-label">WAITING PARTIES THAT FIT</p>
+              <p className="choice-label">{t('sheet.waitingFits')}</p>
               {waiting.filter((q) => q.partySize <= table.capacity).length ? (
                 <div className="table-choices">
                   {waiting
@@ -811,10 +855,12 @@ export default function Home() {
                       >
                         <span className="ticket">{q.queueNumber}</span>
                         <span>
-                          <b>{q.customerName || 'Walk-in'}</b>
+                          <b>{q.customerName || t('queue.walkin')}</b>
                           <small>
-                            {q.partySize} people · waiting{' '}
-                            {minutes(q.joinedAt, now)} min
+                            {t('party.people', { count: q.partySize })} ·{' '}
+                            {t('queue.waiting', {
+                              count: minutes(q.joinedAt, now),
+                            })}
                           </small>
                         </span>
                         <ArrowRight size={18} />
@@ -823,8 +869,8 @@ export default function Home() {
                 </div>
               ) : (
                 <div className="empty">
-                  <h3>Ready for the next party</h3>
-                  <p>No waiting parties fit this table right now.</p>
+                  <h3>{t('sheet.readyNext')}</h3>
+                  <p>{t('sheet.noFit')}</p>
                 </div>
               )}
               <Button
@@ -841,7 +887,7 @@ export default function Home() {
                   )
                 }
               >
-                Mark for cleaning
+                {t('action.markCleaning')}
               </Button>
             </>
           )}
@@ -849,18 +895,28 @@ export default function Home() {
       )}
       {modal?.type === 'queue' && queueParty && (
         <Sheet
-          title={`${queueParty.queueNumber} · ${queueParty.customerName || 'Walk-in'}`}
-          description={`${queueParty.partySize} people · Waiting ${minutes(queueParty.joinedAt, now)} min`}
+          title={`${queueParty.queueNumber} · ${queueParty.customerName || t('queue.walkin')}`}
+          description={`${t('party.people', { count: queueParty.partySize })} · ${t('queue.waiting', { count: minutes(queueParty.joinedAt, now) })}`}
           onClose={() => setModal(null)}
         >
-          {queueParty.phone && <p>Phone: {queueParty.phone}</p>}
+          <div className="detail-block compact">
+            <p>{t('detail.phone', { phone: queueParty.phone })}</p>
+            <p>
+              {t('party.preference', {
+                smoking: t(
+                  queueParty.smoking ? 'party.smoking' : 'party.nonSmoking',
+                ),
+                area: t(queueParty.smoking ? 'area.outdoor' : 'area.indoor'),
+              })}
+            </p>
+          </div>
           <Button
             className="wide"
             onClick={() =>
               setModal({ type: 'seat', id: queueParty.id, kind: 'queue' })
             }
           >
-            Seat party <ArrowUpRight />
+            {t('queue.seat')} <ArrowUpRight />
           </Button>
           <div className="form-row">
             <Button
@@ -877,7 +933,7 @@ export default function Home() {
                 )
               }
             >
-              No-show
+              {t('action.noShow')}
             </Button>
             <Button
               variant="outline"
@@ -895,7 +951,7 @@ export default function Home() {
                 )
               }
             >
-              Remove from queue
+              {t('action.remove')}
             </Button>
           </div>
         </Sheet>
@@ -904,13 +960,18 @@ export default function Home() {
         <Sheet
           title={
             editBooking
-              ? `${editBooking.customerName}’s booking`
-              : 'Add a booking'
+              ? `${editBooking.customerName} · ${t('booking.label')}`
+              : t('booking.add')
           }
           description={
             editBooking
-              ? `${editBooking.partySize} people · ${editBooking.date} at ${editBooking.time} · ${editBooking.status}`
-              : 'Keep a place in the book for a returning face.'
+              ? t('detail.bookingAt', {
+                  count: editBooking.partySize,
+                  date: editBooking.date,
+                  time: editBooking.time,
+                  status: t('status.' + editBooking.status),
+                })
+              : t('tagline.bookings')
           }
           onClose={() => setModal(null)}
         >
@@ -918,6 +979,7 @@ export default function Home() {
           ['upcoming', 'arrived'].includes(editBooking.status) ? (
             <>
               <PartyForm
+                t={t}
                 booking
                 initial={editBooking}
                 onSubmit={(data) => {
@@ -973,21 +1035,24 @@ export default function Home() {
                     variant="outline"
                     onClick={() => changeBooking(editBooking.id, 'no-show')}
                   >
-                    No-show
+                    {t('action.noShow')}
                   </Button>
                   <Button
                     variant="destructive"
                     onClick={() => changeBooking(editBooking.id, 'cancelled')}
                   >
-                    Cancel booking
+                    {t('action.cancelBooking')}
                   </Button>
                 </div>
               )}
             </>
           ) : (
             <div className="detail-block">
-              <p>{editBooking.phone || 'No phone recorded'}</p>
-              <p>{editBooking.notes || 'No additional notes'}</p>
+              <p>{editBooking.phone || t('detail.noPhone')}</p>
+              <p>
+                {t(editBooking.smoking ? 'party.smoking' : 'party.nonSmoking')}
+              </p>
+              <p>{editBooking.notes || t('detail.noNotes')}</p>
               {editBooking.assignedTableId && (
                 <p>Table {editBooking.assignedTableId}</p>
               )}
@@ -997,22 +1062,22 @@ export default function Home() {
       )}
       {modal?.type === 'reset' && (
         <Sheet
-          title="Start a fresh dinner service?"
-          description="This replaces your changes with the original busy-night scenario: eight tables, five waiting parties and three bookings."
+          title={t('reset.title')}
+          description={t('reset.description')}
           onClose={() => setModal(null)}
         >
           <Button
             className="wide"
             onClick={() => commit(seed(), 'Dinner service reset')}
           >
-            Reset demo data
+            {t('action.reset')}
           </Button>
           <Button
             variant="outline"
             className="wide"
             onClick={() => setModal(null)}
           >
-            Keep this service
+            {t('action.keep')}
           </Button>
         </Sheet>
       )}
