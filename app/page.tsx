@@ -295,13 +295,34 @@ export default function Home() {
   return (
     <div className="app">
       <header className="brand">
-        <span className="stamp" aria-hidden="true">
-          新<br />
-          志興
-        </span>
-        <div>
-          <strong>新志興至尊燒鵝大王</strong>
-          <small>THE DINNER NOTEBOOK</small>
+        <div className="restaurant-brand">
+          <svg
+            className="brand-mark"
+            viewBox="0 0 640 700"
+            role="img"
+            aria-label="新志興至尊燒鵝大王"
+          >
+            <image
+              href="/supreme-roast-goose-king-logo.svg"
+              width="640"
+              height="826"
+            />
+          </svg>
+          <div className="brand-lockup">
+            <svg
+              className="brand-character-row"
+              viewBox="0 725 640 101"
+              aria-hidden="true"
+            >
+              <image
+                href="/supreme-roast-goose-king-logo.svg"
+                width="640"
+                height="826"
+              />
+            </svg>
+            <strong>新志興至尊燒鵝大王</strong>
+            <small>晚市簿 · Dinner notebook</small>
+          </div>
         </div>
         <div className="header-actions">
           <div className="language-switch" aria-label="Language / 語言 / 语言">
@@ -329,7 +350,7 @@ export default function Home() {
       <main aria-busy={!hydrated}>
         <div className="page-heading">
           <div>
-            <p className="eyebrow">{t('date.service')}</p>
+            <p className="service-date">{t('date.service')}</p>
             <h1>
               {t('nav.' + view.toLowerCase())}
               <span>.</span>
@@ -511,7 +532,7 @@ export default function Home() {
               .sort()
               .map((date) => (
                 <div key={date} className="booking-day">
-                  <p className="eyebrow">
+                  <p className="booking-date">
                     {date === SERVICE_DATE
                       ? t('booking.today')
                       : new Date(date + 'T12:00:00').toLocaleDateString(
