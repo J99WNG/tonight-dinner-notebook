@@ -16,6 +16,10 @@ import {
   MapPin,
   X,
   NotebookPen,
+  Phone,
+  Cigarette,
+  Ban,
+  Timer,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -35,6 +39,7 @@ import {
   Sheet,
   PartyForm,
   minutes,
+  duration,
   type PartyInput,
 } from '@/components/service-ui';
 type View = 'Tonight' | 'Bookings' | 'Tables';
@@ -51,6 +56,13 @@ const destinations = [
   { name: 'Bookings' as const, icon: CalendarDays },
   { name: 'Tables' as const, icon: LayoutGrid },
 ];
+const hongKongClock = new Intl.DateTimeFormat('en-GB', {
+  timeZone: 'Asia/Hong_Kong',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hourCycle: 'h23',
+});
 export default function Home() {
   const [state, setState] = useState<ServiceState>(() => seed(0));
   const stateRef = useRef(state);
@@ -79,7 +91,7 @@ export default function Home() {
     setState(s);
     setNow(Date.now());
     setHydrated(true);
-    const interval = setInterval(() => setNow(Date.now()), 30000);
+    const interval = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(interval);
   }, []);
   useEffect(() => {
@@ -179,9 +191,14 @@ export default function Home() {
     .filter((q) => q.status === 'waiting' || q.status === 'notified')
     .sort((a, b) => a.joinedAt - b.joinedAt);
   const ready = state.tables.filter((t) => t.status === 'available');
-  const serviceMinute =
-    19 * 60 + 15 + Math.max(0, Math.floor((now - state.startedAt) / 60000));
-  const clock = `${String(Math.floor(serviceMinute / 60) % 24).padStart(2, '0')}:${String(serviceMinute % 60).padStart(2, '0')}`;
+  const timeParts = Object.fromEntries(
+    hongKongClock
+      .formatToParts(now)
+      .filter((part) => part.type !== 'literal')
+      .map((part) => [part.type, part.value]),
+  );
+  const serviceMinute = Number(timeParts.hour) * 60 + Number(timeParts.minute);
+  const clock = `${timeParts.hour}:${timeParts.minute}:${timeParts.second}`;
   const bookingMinute = (r: Reservation) =>
     Number(r.time.slice(0, 2)) * 60 + Number(r.time.slice(3));
   const reservations = state.reservations
@@ -363,8 +380,12 @@ export default function Home() {
                   : t('tagline.tables')}
             </p>
           </div>
-          <div className="service-time">
-            <Moon size={18} /> {t('service.dinner')} <b>{clock}</b>
+          <div
+            className="service-time"
+            aria-label={`${t('service.hkTime')}: ${clock}`}
+          >
+            <Moon size={18} /> {t('service.dinner')}{' '}
+            <span>{t('service.hkTime')}</span> <b>{clock}</b>
           </div>
         </div>
         {storageIssue && (
@@ -756,17 +777,25 @@ export default function Home() {
                     count: tableParty?.partySize || table.capacity,
                   })}
                 </h3>
-                <p>
-                  {t('detail.seatedAgo', {
-                    count: minutes(table.seatedAt || now, now),
+                <p className="detail-line">
+                  <Timer aria-hidden="true" />
+                  {t('detail.seatedFor', {
+                    duration: duration(table.seatedAt || now, now),
                   })}
                 </p>
-                <p>
+                <p className="detail-line">
+                  {tableParty?.smoking ? (
+                    <Cigarette aria-hidden="true" />
+                  ) : (
+                    <Ban aria-hidden="true" />
+                  )}
                   {tableParty &&
                     t(
                       tableParty.smoking ? 'party.smoking' : 'party.nonSmoking',
-                    )}{' '}
-                  · {tableParty?.phone}
+                    )}
+                </p>
+                <p className="detail-line">
+                  <Phone aria-hidden="true" /> {tableParty?.phone}
                 </p>
               </div>
               <Button
@@ -921,8 +950,16 @@ export default function Home() {
           onClose={() => setModal(null)}
         >
           <div className="detail-block compact">
-            <p>{t('detail.phone', { phone: queueParty.phone })}</p>
-            <p>
+            <p className="detail-line">
+              <Phone aria-hidden="true" />
+              {t('detail.phone', { phone: queueParty.phone })}
+            </p>
+            <p className="detail-line">
+              {queueParty.smoking ? (
+                <Cigarette aria-hidden="true" />
+              ) : (
+                <Ban aria-hidden="true" />
+              )}
               {t('party.preference', {
                 smoking: t(
                   queueParty.smoking ? 'party.smoking' : 'party.nonSmoking',
@@ -1069,8 +1106,16 @@ export default function Home() {
             </>
           ) : (
             <div className="detail-block">
-              <p>{editBooking.phone || t('detail.noPhone')}</p>
-              <p>
+              <p className="detail-line">
+                <Phone aria-hidden="true" />
+                {editBooking.phone || t('detail.noPhone')}
+              </p>
+              <p className="detail-line">
+                {editBooking.smoking ? (
+                  <Cigarette aria-hidden="true" />
+                ) : (
+                  <Ban aria-hidden="true" />
+                )}
                 {t(editBooking.smoking ? 'party.smoking' : 'party.nonSmoking')}
               </p>
               <p>{editBooking.notes || t('detail.noNotes')}</p>

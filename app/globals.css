@@ -11,7 +11,7 @@
   --color-primary: var(--primary);
   --color-primary-foreground: var(--paper);
   --color-secondary: var(--orange-100);
-  --color-secondary-foreground: var(--red-800);
+  --color-secondary-foreground: var(--orange-800);
   --color-muted: var(--neutral-100);
   --color-muted-foreground: var(--ink-muted);
   --color-accent: var(--red-100);
@@ -24,13 +24,14 @@
   --radius-lg: 12px;
 }
 :root {
-  /* Brand source: supplied 新志興 logo, expressed as OKLCH. */
+  /* Brand primitives — sampled from the supplied 新志興 logo. */
   --orange-50: oklch(97.8% 0.022 74.3);
   --orange-100: oklch(94.5% 0.055 74.3);
   --orange-200: oklch(89% 0.095 70);
   --orange-500: oklch(75.2% 0.179 58.7);
   --orange-600: oklch(65% 0.176 48);
   --orange-700: oklch(49% 0.132 43);
+  --orange-800: oklch(39% 0.112 40);
   --red-50: oklch(97% 0.018 23.3);
   --red-100: oklch(93% 0.045 23.3);
   --red-200: oklch(86% 0.086 23.3);
@@ -38,16 +39,33 @@
   --red-700: oklch(39.1% 0.158 24);
   --red-800: oklch(31.5% 0.128 20);
   --aubergine: oklch(27.9% 0.102 12.9);
+
+  /* Semantic status colors — never rely on color without a text label/icon. */
+  --status-ready-bg: oklch(94% 0.055 145);
+  --status-ready-border: oklch(70% 0.105 145);
+  --status-ready-fg: oklch(37% 0.105 145);
+  --status-occupied-bg: var(--red-50);
+  --status-occupied-border: var(--red-200);
+  --status-occupied-fg: var(--red-700);
+  --status-reserved-bg: oklch(94% 0.045 250);
+  --status-reserved-border: oklch(72% 0.09 250);
+  --status-reserved-fg: oklch(39% 0.12 250);
+  --status-cleaning-bg: oklch(95% 0.065 84);
+  --status-cleaning-border: oklch(72% 0.12 76);
+  --status-cleaning-fg: oklch(40% 0.105 68);
+
+  /* Surfaces, type, and component aliases. */
   --paper: oklch(99% 0.008 74);
   --neutral-50: oklch(97.5% 0.008 74);
   --neutral-100: oklch(94.5% 0.01 74);
   --neutral-200: oklch(89% 0.012 74);
   --neutral-300: oklch(81% 0.014 74);
   --ink-muted: oklch(45% 0.028 35);
+  --type-min: 0.875rem;
   --background: var(--orange-50);
   --foreground: var(--aubergine);
   --card: var(--paper);
-  --primary: var(--red-700);
+  --primary: var(--orange-700);
   --border: var(--neutral-200);
 }
 * {
@@ -133,14 +151,14 @@ p {
 }
 .brand small {
   display: block;
-  font-size: 12px;
+  font-size: var(--type-min);
   letter-spacing: 0;
   margin-top: 5px;
   color: var(--ink-muted);
 }
 .service-pill {
   margin-left: auto;
-  font-size: 12px;
+  font-size: var(--type-min);
   display: flex;
   align-items: center;
   gap: 7px;
@@ -149,7 +167,7 @@ p {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--orange-500);
+  background: var(--status-ready-border);
 }
 main {
   padding: 36px 48px 130px;
@@ -184,7 +202,7 @@ h1 span {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 12px;
+  font-size: var(--type-min);
 }
 .service-time b {
   font-size: 20px;
@@ -210,16 +228,16 @@ h2 {
   letter-spacing: -0.5px;
 }
 h2 span {
-  font-size: 12px;
+  font-size: var(--type-min);
   letter-spacing: 0;
   margin-left: 7px;
   color: var(--ink-muted);
   font-weight: 400;
 }
 .ready-count {
-  color: var(--orange-700);
-  font-size: 12px;
-  background: var(--orange-100);
+  color: var(--status-ready-fg);
+  font-size: var(--type-min);
+  background: var(--status-ready-bg);
   padding: 6px 10px;
   border-radius: 20px;
 }
@@ -244,17 +262,21 @@ h2 span {
   transform: translateY(-2px);
 }
 .table-card.available {
-  background: var(--orange-100);
-  border: 1.5px solid var(--orange-600);
+  background: var(--status-ready-bg);
+  border: 1.5px solid var(--status-ready-border);
+}
+.table-card.occupied {
+  background: var(--status-occupied-bg);
+  border-color: var(--status-occupied-border);
 }
 .table-card.reserved {
-  background: var(--red-50);
-  border-color: var(--red-200);
+  background: var(--status-reserved-bg);
+  border-color: var(--status-reserved-border);
 }
 .table-card.cleaning {
-  background: var(--neutral-100);
+  background: var(--status-cleaning-bg);
   border-style: dashed;
-  border-color: var(--neutral-300);
+  border-color: var(--status-cleaning-border);
 }
 .table-top {
   display: flex;
@@ -269,32 +291,61 @@ h2 span {
   color: var(--ink-muted);
 }
 .available .table-top svg {
-  color: var(--orange-700);
+  color: var(--status-ready-fg);
+}
+.occupied .table-top svg {
+  color: var(--status-occupied-fg);
+}
+.reserved .table-top svg {
+  color: var(--status-reserved-fg);
+}
+.cleaning .table-top svg {
+  color: var(--status-cleaning-fg);
 }
 .capacity {
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 11px;
+  font-size: var(--type-min);
   margin-top: 7px;
   color: var(--ink-muted);
 }
 .table-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
   margin-top: auto;
   padding-top: 15px;
-  font-size: 10px;
+  font-size: var(--type-min);
   font-weight: 600;
   white-space: nowrap;
 }
 .available .table-status {
-  color: var(--orange-700);
+  color: var(--status-ready-fg);
+}
+.occupied .table-status {
+  color: var(--status-occupied-fg);
 }
 .reserved .table-status {
-  color: var(--red-700);
+  color: var(--status-reserved-fg);
+}
+.cleaning .table-status {
+  color: var(--status-cleaning-fg);
+}
+.status-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.status-time svg {
+  width: 14px;
+  height: 14px;
 }
 .table-hint,
 .queue-note {
-  font-size: 11px;
+  font-size: var(--type-min);
   color: var(--ink-muted);
   line-height: 1.5;
   margin: 14px 0 0;
@@ -336,19 +387,19 @@ h2 span {
   overflow-wrap: anywhere;
 }
 .party-info h3 span {
-  font-size: 12px;
+  font-size: var(--type-min);
   color: var(--ink-muted);
   font-weight: 400;
 }
 .party-info p {
-  font-size: 12px;
+  font-size: var(--type-min);
   color: var(--ink-muted);
   margin-top: 7px;
 }
 .queue-card button {
   background: var(--paper);
-  color: var(--red-700);
-  border: 1px solid var(--red-200);
+  color: var(--orange-800);
+  border: 1px solid var(--orange-200);
 }
 .bottom-nav {
   position: fixed;
@@ -375,11 +426,11 @@ h2 span {
   gap: 9px;
   color: var(--ink-muted);
   border-radius: 12px;
-  font-size: 13px;
+  font-size: var(--type-min);
 }
 .bottom-nav button.active {
-  background: var(--red-100);
-  color: var(--red-800);
+  background: var(--orange-100);
+  color: var(--orange-800);
   font-weight: 700;
 }
 @media (max-width: 760px) {
@@ -401,21 +452,23 @@ h2 span {
     margin-bottom: 4px;
   }
   .brand strong {
-    font-size: 11px;
-    letter-spacing: 0.02em;
+    display: none;
   }
   .brand small {
-    font-size: 10px;
+    font-size: var(--type-min);
     line-height: 1.2;
+    margin-top: 0;
   }
   .service-pill {
-    font-size: 10px;
+    font-size: var(--type-min);
   }
   main {
     padding: 25px 20px 125px;
   }
   .page-heading {
     margin-bottom: 22px;
+    flex-wrap: wrap;
+    gap: 14px;
   }
   .page-heading h1 {
     font-size: 38px;
@@ -424,7 +477,15 @@ h2 span {
     font-size: 14px;
   }
   .service-time {
-    display: none;
+    display: flex;
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--orange-200);
+    border-radius: 10px;
+    background: var(--paper);
+  }
+  .service-time b {
+    margin-left: auto;
   }
   .workspace {
     display: flex;
@@ -438,6 +499,7 @@ h2 span {
     font-size: 19px;
   }
   .table-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
   }
   .table-card {
@@ -452,10 +514,10 @@ h2 span {
     width: 13px;
   }
   .capacity {
-    font-size: 10px;
+    font-size: var(--type-min);
   }
   .table-status {
-    font-size: 9px;
+    font-size: var(--type-min);
     padding-top: 12px;
   }
   .queue-card {
@@ -472,7 +534,7 @@ h2 span {
     margin-top: 4px;
   }
   .party-info p {
-    font-size: 11px;
+    font-size: var(--type-min);
   }
   .queue-card button {
     padding: 0 12px;
@@ -493,10 +555,10 @@ h2 span {
     min-height: 58px;
     flex-direction: column;
     gap: 5px;
-    font-size: 11px;
+    font-size: var(--type-min);
   }
   .table-hint {
-    font-size: 10px;
+    font-size: var(--type-min);
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -517,7 +579,7 @@ h2 span {
   margin-top: 5px;
 }
 .text-action[data-slot='button'] {
-  font-size: 11px;
+  font-size: var(--type-min);
   min-height: 44px;
   padding: 0 5px;
 }
@@ -544,9 +606,22 @@ h2 span {
   min-width: 57px;
   padding: 0;
 }
-.booking-time span {
+.booking-clock {
+  display: flex !important;
+  align-items: center;
+  gap: 6px;
+  margin-top: 0 !important;
+  color: inherit !important;
+  font-size: 19px !important;
+  font-weight: 600 !important;
+}
+.booking-clock svg {
+  width: 16px;
+  height: 16px;
+}
+.booking-time > span:last-child {
   display: block;
-  font-size: 10px;
+  font-size: var(--type-min);
   font-weight: 400;
   margin-top: 5px;
   color: var(--ink-muted);
@@ -555,17 +630,17 @@ h2 span {
   font-size: 14px;
 }
 .reservation-card .party-info h3 span {
-  font-size: 11px;
+  font-size: var(--type-min);
 }
 .reservation-card button[data-slot='button'] {
-  font-size: 12px;
+  font-size: var(--type-min);
   padding: 0 13px;
 }
 .reservation-status.upcoming {
-  color: var(--red-700);
+  color: var(--status-reserved-fg);
 }
 .reservation-status.arrived {
-  color: var(--orange-700);
+  color: var(--status-ready-fg);
   font-weight: 600;
 }
 .reservation-status.cancelled,
@@ -573,7 +648,7 @@ h2 span {
   color: var(--red-700);
 }
 .soon .booking-time {
-  color: var(--red-700);
+  color: var(--status-reserved-fg);
 }
 .table-hint,
 .queue-note {
@@ -586,14 +661,14 @@ h2 span {
   gap: 7px;
   align-items: center;
   color: var(--ink-muted);
-  font-size: 10px;
+  font-size: var(--type-min);
   margin-top: 1px;
 }
 .queue-intro {
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 11px;
+  font-size: var(--type-min);
   color: var(--ink-muted);
   margin-bottom: 12px;
 }
@@ -603,7 +678,7 @@ h2 span {
 .busy-dot {
   height: 6px;
   width: 6px;
-  background: var(--orange-600);
+  background: var(--status-cleaning-border);
   border-radius: 50%;
 }
 .queue-card {
@@ -615,19 +690,19 @@ h2 span {
 }
 .fit-note {
   display: block;
-  font-size: 10px;
-  color: var(--orange-700);
+  font-size: var(--type-min);
+  color: var(--status-ready-fg);
   margin-top: 6px;
 }
 .queue-card .estimate {
-  font-size: 10px;
+  font-size: var(--type-min);
 }
 .add-another[data-slot='button'] {
   margin-top: 12px;
   width: 100%;
   border: 1px dashed var(--orange-200);
   background: transparent;
-  color: var(--red-700);
+  color: var(--orange-800);
 }
 .empty {
   border: 1px dashed var(--border);
@@ -645,7 +720,7 @@ h2 span {
   color: var(--foreground);
 }
 .empty p {
-  font-size: 13px;
+  font-size: var(--type-min);
   line-height: 1.6;
   max-width: 300px;
 }
@@ -664,14 +739,14 @@ h2 span {
   background: var(--paper);
 }
 .secondary-view .reservation-card.soon {
-  background: var(--orange-50);
+  background: var(--status-reserved-bg);
 }
 .tables-view .table-card {
   min-height: 155px;
   padding: 20px;
 }
 .tables-view .table-status {
-  font-size: 12px;
+  font-size: var(--type-min);
 }
 .table-filters {
   display: flex;
@@ -680,13 +755,13 @@ h2 span {
   flex-wrap: wrap;
 }
 .table-filters button[data-slot='button'] {
-  font-size: 12px;
+  font-size: var(--type-min);
   padding: 0 13px;
 }
 .selected[data-slot='button'] {
-  background: var(--red-700);
+  background: var(--orange-700);
   color: white;
-  border-color: var(--red-700);
+  border-color: var(--orange-700);
 }
 .turnover-guide {
   border-top: 1px solid var(--border);
@@ -702,7 +777,7 @@ h2 span {
   align-items: center;
   gap: 10px;
   margin: 16px 0;
-  font-size: 13px;
+  font-size: var(--type-min);
 }
 .turnover-guide small {
   color: var(--ink-muted);
@@ -710,11 +785,11 @@ h2 span {
 .reset-button[data-slot='button'] {
   margin: 40px 0 8px;
   color: var(--ink-muted);
-  font-size: 12px;
+  font-size: var(--type-min);
   padding-left: 0;
 }
 .demo-note {
-  font-size: 11px;
+  font-size: var(--type-min);
   color: var(--ink-muted);
   line-height: 1.7;
 }
@@ -734,7 +809,7 @@ h2 span {
   max-width: calc(100% - 28px);
   width: max-content;
   z-index: 70;
-  font-size: 13px;
+  font-size: var(--type-min);
 }
 .toast span {
   max-width: 270px;
@@ -820,7 +895,7 @@ h2 span {
 }
 .form-row button[data-slot='button'] {
   padding: 0 8px;
-  font-size: 12px;
+  font-size: var(--type-min);
   white-space: normal;
 }
 .wide[data-slot='button'] {
@@ -830,12 +905,12 @@ h2 span {
 }
 .form-footnote {
   text-align: center;
-  font-size: 11px;
+  font-size: var(--type-min);
   line-height: 1.7;
   color: var(--ink-muted);
 }
 .choice-label {
-  font-size: 10px;
+  font-size: var(--type-min);
   font-weight: 700;
   letter-spacing: 1.4px;
   color: var(--ink-muted);
@@ -869,7 +944,7 @@ h2 span {
   display: block;
   margin-top: 5px;
   color: var(--ink-muted);
-  font-size: 11px;
+  font-size: var(--type-min);
 }
 .table-choices b {
   font-size: 15px;
@@ -889,11 +964,12 @@ h2 span {
 }
 .detail-block p {
   color: var(--ink-muted);
-  font-size: 13px;
+  font-size: var(--type-min);
   line-height: 1.5;
 }
 .storage-warning {
-  background: var(--orange-100);
+  background: var(--status-cleaning-bg);
+  color: var(--status-cleaning-fg);
   padding: 15px;
   margin-bottom: 20px;
   line-height: 1.5;
@@ -924,7 +1000,7 @@ h2 span {
   .location {
     order: 3;
     padding-bottom: 4px;
-    font-size: 9px;
+    font-size: var(--type-min);
   }
   .queue-card {
     min-height: 108px;
@@ -932,14 +1008,14 @@ h2 span {
   .queue-card .estimate {
     display: block;
     margin-top: 5px;
-    font-size: 10px;
+    font-size: var(--type-min);
   }
   .queue-card .estimate::first-letter {
     color: transparent;
   }
   .queue-card .party-info h3 span {
     display: inline;
-    font-size: 11px;
+    font-size: var(--type-min);
   }
   .queue-card .party-info h3 {
     font-size: 14px;
@@ -951,10 +1027,10 @@ h2 span {
     gap: 10px;
   }
   .queue-intro {
-    font-size: 10px;
+    font-size: var(--type-min);
   }
   .table-status {
-    font-size: 9px;
+    font-size: var(--type-min);
   }
   .table-card.reserved .table-status {
     white-space: normal;
@@ -987,7 +1063,7 @@ h2 span {
   }
   .toast {
     bottom: 88px;
-    font-size: 12px;
+    font-size: var(--type-min);
     padding: 7px 10px;
     gap: 6px;
   }
@@ -1008,16 +1084,16 @@ h2 span {
   }
   .table-filters button[data-slot='button'] {
     padding: 0 10px;
-    font-size: 11px;
+    font-size: var(--type-min);
   }
   .secondary-view .reservation-card {
     padding: 18px 10px;
   }
   .service-pill {
-    font-size: 9px;
+    font-size: var(--type-min);
   }
   .brand strong {
-    font-size: 13px;
+    font-size: var(--type-min);
   }
 }
 .booking-reminder {
@@ -1037,13 +1113,13 @@ h2 span {
     padding: 10px;
     margin-top: 14px;
     color: var(--red-700);
-    font-size: 10px;
+    font-size: var(--type-min);
   }
   .booking-reminder span {
     flex: 1;
   }
   .booking-reminder small {
-    font-size: 9px;
+    font-size: var(--type-min);
   }
   .booking-reminder b {
     font-weight: 600;
@@ -1068,11 +1144,11 @@ h2 span {
   min-width: 35px;
   min-height: 34px;
   border-radius: 7px;
-  font-size: 11px;
+  font-size: var(--type-min);
 }
 .language-switch button[aria-pressed='true'] {
   background: var(--paper);
-  color: var(--red-700);
+  color: var(--orange-800);
   font-weight: 700;
   box-shadow: 0 1px 5px oklch(27.9% 0.102 12.9 / 7%);
 }
@@ -1085,13 +1161,25 @@ h2 span {
 .smoking-options button[data-slot='button'] {
   min-height: 48px;
 }
-.preference-note {
+.party-meta {
   display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 10px;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  font-size: var(--type-min);
   color: var(--ink-muted);
-  margin-top: 5px;
+  margin-top: 8px;
+}
+.party-meta > span,
+.detail-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.party-meta svg,
+.detail-line svg {
+  width: 16px;
+  height: 16px;
+  color: var(--orange-700);
 }
 .detail-block.compact {
   padding: 16px;
@@ -1116,17 +1204,11 @@ h2 span {
   .brand strong {
     white-space: nowrap;
   }
-  .preference-note {
-    font-size: 9px;
-  }
-  .queue-card .preference-note {
-    max-width: 150px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  .queue-card .party-meta {
+    gap: 5px 10px;
   }
   .smoking-options button[data-slot='button'] {
-    font-size: 12px;
+    font-size: var(--type-min);
     padding: 0 8px;
   }
 }

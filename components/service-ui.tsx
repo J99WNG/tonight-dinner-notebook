@@ -9,6 +9,8 @@ import {
   CalendarDays,
   Cigarette,
   Ban,
+  Phone,
+  Timer,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +29,15 @@ import {
 import type { Translate } from '@/lib/i18n';
 export const minutes = (since: number, now: number) =>
   Math.max(0, Math.floor((now - since) / 60000));
+export const duration = (since: number, now: number) => {
+  const totalSeconds = Math.max(0, Math.floor((now - since) / 1000));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  return hours
+    ? `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+    : `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+};
 export function Sheet({
   title,
   description,
@@ -89,12 +100,16 @@ export function TableCard({
         {table.capacity} · {t('area.' + table.area)}
       </span>
       <span className="table-status">
-        {t('status.' + table.status)}
-        {table.seatedAt
-          ? ' · ' + minutes(table.seatedAt, now) + 'm'
-          : table.status === 'reserved' && reservation
-            ? ' · ' + reservation.time
-            : ''}
+        <span>{t('status.' + table.status)}</span>
+        {table.seatedAt ? (
+          <span className="status-time">
+            <Timer aria-hidden="true" /> {duration(table.seatedAt, now)}
+          </span>
+        ) : table.status === 'reserved' && reservation ? (
+          <span className="status-time">
+            <Clock3 aria-hidden="true" /> {reservation.time}
+          </span>
+        ) : null}
       </span>
     </button>
   );
@@ -138,9 +153,14 @@ export function QueueCard({
             })}
           </span>
         </p>
-        <span className="preference-note">
-          {q.smoking ? <Cigarette size={11} /> : <Ban size={11} />}{' '}
-          {t(q.smoking ? 'party.smoking' : 'party.nonSmoking')} · {q.phone}
+        <span className="party-meta">
+          <span>
+            {q.smoking ? <Cigarette /> : <Ban />}
+            {t(q.smoking ? 'party.smoking' : 'party.nonSmoking')}
+          </span>
+          <span>
+            <Phone /> {q.phone}
+          </span>
         </span>
         {fits && <span className="fit-note">{t('queue.fit')}</span>}
       </div>
@@ -176,7 +196,9 @@ export function ReservationCard({
         onClick={onEdit}
         aria-label={`Edit booking for ${r.customerName} at ${r.time}`}
       >
-        {r.time}
+        <span className="booking-clock">
+          <Clock3 aria-hidden="true" /> {r.time}
+        </span>
         <span>{r.assignedTableId || t('booking.label')}</span>
       </button>
       <div className="party-info">
@@ -189,9 +211,14 @@ export function ReservationCard({
             ? t('booking.dueSoon')
             : t('status.' + r.status)}
         </p>
-        <span className="preference-note">
-          {r.smoking ? <Cigarette size={11} /> : <Ban size={11} />}{' '}
-          {t(r.smoking ? 'party.smoking' : 'party.nonSmoking')} · {r.phone}
+        <span className="party-meta">
+          <span>
+            {r.smoking ? <Cigarette /> : <Ban />}
+            {t(r.smoking ? 'party.smoking' : 'party.nonSmoking')}
+          </span>
+          <span>
+            <Phone /> {r.phone}
+          </span>
         </span>
       </div>
       {r.status === 'upcoming' ? (

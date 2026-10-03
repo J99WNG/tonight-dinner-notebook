@@ -9,6 +9,7 @@ const en: Record<string, string> = {
   'nav.tables': 'Tables',
   'service.open': 'Service open',
   'service.dinner': 'Dinner service',
+  'service.hkTime': 'Hong Kong time',
   'date.service': 'THURSDAY, 3 SEPTEMBER',
   'tagline.tonight': 'A little order in the dinner rush.',
   'tagline.bookings': 'A place for everyone coming tonight.',
@@ -113,6 +114,7 @@ const en: Record<string, string> = {
   'sheet.noFit': 'No waiting parties fit this table right now.',
   'sheet.waitingFits': 'WAITING PARTIES THAT FIT',
   'detail.seatedAgo': 'Seated {count} min ago',
+  'detail.seatedFor': 'Seated for {duration}',
   'detail.phone': 'Phone: {phone}',
   'detail.noPhone': 'No phone recorded',
   'detail.noNotes': 'No additional notes',
@@ -126,7 +128,7 @@ const en: Record<string, string> = {
   'demo.flow': 'Occupied → Cleaning → Ready',
   'demo.help': 'Finish a table, give it a clean, then mark it ready.',
   'demo.note': 'Sample dinner service · 3 September 2026',
-  'demo.clock': 'Service starts at 19:15 and advances while you try it.',
+  'demo.clock': 'The service clock uses current Hong Kong time.',
 };
 const hk: Record<string, string> = {
   'nav.tonight': '今晚',
@@ -134,6 +136,7 @@ const hk: Record<string, string> = {
   'nav.tables': '枱位',
   'service.open': '營業中',
   'service.dinner': '晚市',
+  'service.hkTime': '香港時間',
   'date.service': '星期四 · 9月3日',
   'tagline.tonight': '繁忙晚市，都可以井井有條。',
   'tagline.bookings': '今晚每枱客，一目了然。',
@@ -236,6 +239,7 @@ const hk: Record<string, string> = {
   'sheet.noFit': '而家冇合適候位客人。',
   'sheet.waitingFits': '合適候位客人',
   'detail.seatedAgo': '入座 {count} 分鐘',
+  'detail.seatedFor': '已入座 {duration}',
   'detail.phone': '電話：{phone}',
   'detail.noPhone': '未有電話',
   'detail.noNotes': '冇附加備註',
@@ -247,7 +251,7 @@ const hk: Record<string, string> = {
   'demo.flow': '用餐中 → 清潔中 → 可用',
   'demo.help': '完成用餐、清潔，再標示為可用。',
   'demo.note': '示範晚市 · 2026年9月3日',
-  'demo.clock': '晚市由 19:15 開始，試用期間時間會前進。',
+  'demo.clock': '晚市時鐘會跟隨目前香港時間。',
 };
 const cn: Record<string, string> = {
   ...hk,
@@ -256,6 +260,7 @@ const cn: Record<string, string> = {
   'nav.tables': '桌位',
   'service.open': '营业中',
   'service.dinner': '晚餐时段',
+  'service.hkTime': '香港时间',
   'date.service': '星期四 · 9月3日',
   'tagline.tonight': '繁忙晚餐，也能井井有条。',
   'tagline.bookings': '今晚每桌客人，一目了然。',
@@ -357,6 +362,7 @@ const cn: Record<string, string> = {
   'sheet.noFit': '现在没有合适的等位客人。',
   'sheet.waitingFits': '合适等位客人',
   'detail.seatedAgo': '入座 {count} 分钟',
+  'detail.seatedFor': '已入座 {duration}',
   'detail.phone': '电话：{phone}',
   'detail.noPhone': '没有电话',
   'detail.noNotes': '没有附加备注',
@@ -368,7 +374,7 @@ const cn: Record<string, string> = {
   'demo.flow': '用餐中 → 清洁中 → 可用',
   'demo.help': '完成用餐、清洁，再标为可用。',
   'demo.note': '演示晚餐 · 2026年9月3日',
-  'demo.clock': '晚餐从 19:15 开始，试用期间时间会前进。',
+  'demo.clock': '晚餐时钟会跟随当前香港时间。',
 };
 const dictionaries: Record<Language, Record<string, string>> = {
   en,
