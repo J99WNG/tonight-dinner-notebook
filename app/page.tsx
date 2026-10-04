@@ -316,8 +316,7 @@ export default function Home() {
           <svg
             className="brand-mark"
             viewBox="0 0 640 700"
-            role="img"
-            aria-label="新志興至尊燒鵝大王"
+            aria-hidden="true"
           >
             <image
               href="/supreme-roast-goose-king-logo.svg"
@@ -325,6 +324,7 @@ export default function Home() {
               height="826"
             />
           </svg>
+          <span className="sr-only">新志興至尊燒鵝大王</span>
           <div className="brand-lockup">
             <svg
               className="brand-character-row"

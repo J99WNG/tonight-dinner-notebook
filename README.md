@@ -16,6 +16,16 @@ npm run build
 
 The generated React/TypeScript Sites starter uses Vinext on Vite and Tailwind CSS. The build exports static files to `dist/client`; no application server, accounts, API, or database is required. The three destinations are local views within one page.
 
+## Branch workflow
+
+- `main` is the production-ready branch. Changes arrive through reviewed pull requests from `develop`.
+- `develop` is the integration branch for the next release.
+- Short-lived `feature/*`, `fix/*`, and `chore/*` branches start from `develop` and return to it through pull requests.
+- CI must pass type checking, linting, and the production build before merge.
+- Sites production deployment remains an explicit release step after `develop` is promoted to `main`.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full workflow and commit conventions.
+
 ## Source map
 
 - `app/page.tsx`: Tonight, Bookings, Tables, and action orchestration.
