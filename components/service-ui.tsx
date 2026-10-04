@@ -11,6 +11,8 @@ import {
   Ban,
   Phone,
   Timer,
+  Snowflake,
+  MapPin,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -143,10 +145,12 @@ export function QueueCard({
           {q.customerName || t('queue.walkin')}{' '}
           <span>· {t('party.people', { count: q.partySize })}</span>
         </h3>
-        <p>
-          {t('queue.waiting', { count: minutes(q.joinedAt, now) })}{' '}
+        <p className="wait-details">
+          <span>
+            <Clock3 aria-hidden="true" />
+            {t('queue.waiting', { count: minutes(q.joinedAt, now) })}
+          </span>
           <span className="estimate">
-            ·{' '}
             {t('queue.estimate', {
               min: q.estimatedWaitMinutes || 15,
               max: (q.estimatedWaitMinutes || 15) + 5,
@@ -161,6 +165,11 @@ export function QueueCard({
           <span>
             <Phone /> {q.phone}
           </span>
+          {q.airConditioning && (
+            <span>
+              <Snowflake /> {t('party.airConditioned')}
+            </span>
+          )}
         </span>
         {fits && <span className="fit-note">{t('queue.fit')}</span>}
       </div>
@@ -219,6 +228,11 @@ export function ReservationCard({
           <span>
             <Phone /> {r.phone}
           </span>
+          {r.airConditioning && (
+            <span>
+              <Snowflake /> {t('party.airConditioned')}
+            </span>
+          )}
         </span>
       </div>
       {r.status === 'upcoming' ? (
@@ -250,22 +264,68 @@ export interface PartyInput {
   time: string;
   notes: string;
   smoking: boolean;
+  airConditioning: boolean;
+  assignedTableId?: string;
 }
 export function PartyForm({
   booking = false,
   initial,
+  tables = [],
+  reservations = [],
   onSubmit,
   t,
 }: {
   booking?: boolean;
   initial?: Reservation;
+  tables?: RestaurantTable[];
+  reservations?: Reservation[];
   onSubmit: (data: PartyInput) => void;
   t: Translate;
 }) {
   const [error, setError] = useState('');
   const [size, setSize] = useState(initial?.partySize || 2);
+  const [exactSize, setExactSize] = useState(
+    Math.max(7, initial?.partySize || 7),
+  );
   const [smoking, setSmoking] = useState(initial?.smoking ?? false);
+  const [airConditioning, setAirConditioning] = useState(
+    initial?.airConditioning ?? false,
+  );
   const [large, setLarge] = useState((initial?.partySize || 2) >= 7);
+  const [date, setDate] = useState(initial?.date || SERVICE_DATE);
+  const [time, setTime] = useState(initial?.time || '19:30');
+  const [assignedTableId, setAssignedTableId] = useState(
+    initial?.assignedTableId || '',
+  );
+  const partySize = large ? exactSize : size;
+  const eligibleTables = tables
+    .filter(
+      (table) =>
+        table.capacity >= partySize &&
+        (date !== SERVICE_DATE ||
+          table.status === 'available' ||
+          table.reservationId === initial?.id) &&
+        !reservations.some(
+          (reservation) =>
+            reservation.id !== initial?.id &&
+            reservation.date === date &&
+            reservation.time === time &&
+            reservation.assignedTableId === table.id &&
+            ['upcoming', 'arrived'].includes(reservation.status),
+        ),
+    )
+    .sort(
+      (a, b) =>
+        Number(
+          b.area ===
+            (airConditioning ? 'indoor' : smoking ? 'outdoor' : 'indoor'),
+        ) -
+          Number(
+            a.area ===
+              (airConditioning ? 'indoor' : smoking ? 'outdoor' : 'indoor'),
+          ) ||
+        a.capacity - b.capacity,
+    );
   function submit(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
@@ -280,11 +340,17 @@ export function PartyForm({
     onSubmit({
       customerName: value('name'),
       phone: value('phone'),
-      partySize: large ? Number(f.get('size')) : size,
-      date: value('date', SERVICE_DATE),
-      time: value('time', '19:30'),
+      partySize,
+      date,
+      time,
       notes: value('notes'),
       smoking,
+      airConditioning,
+      assignedTableId: eligibleTables.some(
+        (table) => table.id === assignedTableId,
+      )
+        ? assignedTableId
+        : undefined,
     });
   }
   return (
@@ -327,6 +393,7 @@ export function PartyForm({
             min="7"
             max="30"
             defaultValue={Math.max(7, size)}
+            onChange={(event) => setExactSize(Number(event.target.value))}
             required
           />
         </label>
@@ -371,9 +438,38 @@ export function PartyForm({
             variant="outline"
             className={smoking ? 'selected' : ''}
             aria-pressed={smoking}
-            onClick={() => setSmoking(true)}
+            onClick={() => {
+              setSmoking(true);
+              setAirConditioning(false);
+            }}
           >
             <Cigarette /> {t('form.yes')}
+          </Button>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>{t('form.airConditioningQuestion')}</legend>
+        <div className="preference-options">
+          <Button
+            type="button"
+            variant="outline"
+            className={!airConditioning ? 'selected' : ''}
+            aria-pressed={!airConditioning}
+            onClick={() => setAirConditioning(false)}
+          >
+            <MapPin /> {t('form.noPreference')}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className={airConditioning ? 'selected' : ''}
+            aria-pressed={airConditioning}
+            onClick={() => {
+              setAirConditioning(true);
+              setSmoking(false);
+            }}
+          >
+            <Snowflake /> {t('form.airConditioned')}
           </Button>
         </div>
       </fieldset>
@@ -386,7 +482,8 @@ export function PartyForm({
                 id="party-date"
                 name="date"
                 type="date"
-                defaultValue={initial?.date || SERVICE_DATE}
+                value={date}
+                onChange={(event) => setDate(event.target.value)}
                 min={SERVICE_DATE}
                 required
               />
@@ -397,11 +494,45 @@ export function PartyForm({
                 id="party-time"
                 name="time"
                 type="time"
-                defaultValue={initial?.time || '19:30'}
+                value={time}
+                onChange={(event) => setTime(event.target.value)}
                 required
               />
             </label>
           </div>
+          <fieldset>
+            <legend>
+              {t('form.assignTable')} <span>{t('form.optional')}</span>
+            </legend>
+            {eligibleTables.length ? (
+              <div className="assignment-options">
+                {eligibleTables.map((table) => (
+                  <Button
+                    key={table.id}
+                    type="button"
+                    variant="outline"
+                    className={
+                      assignedTableId === table.id ? 'selected' : ''
+                    }
+                    aria-pressed={assignedTableId === table.id}
+                    onClick={() =>
+                      setAssignedTableId((current) =>
+                        current === table.id ? '' : table.id,
+                      )
+                    }
+                  >
+                    <b>{table.name}</b>
+                    <span>
+                      {table.capacity} · {t('area.' + table.area)}
+                    </span>
+                  </Button>
+                ))}
+              </div>
+            ) : (
+              <p className="form-footnote">{t('form.noSuitableTable')}</p>
+            )}
+            <p className="assignment-help">{t('form.assignTableHelp')}</p>
+          </fieldset>
           <label htmlFor="party-notes">
             {t('form.notes')} <span>{t('form.optional')}</span>
             <Input

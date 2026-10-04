@@ -17,6 +17,7 @@ export interface QueueEntry {
   phone: string;
   partySize: number;
   smoking: boolean;
+  airConditioning?: boolean;
   joinedAt: number;
   estimatedWaitMinutes?: number;
   status: 'waiting' | 'notified' | 'seated' | 'cancelled' | 'no-show';
@@ -28,6 +29,7 @@ export interface Reservation {
   phone: string;
   partySize: number;
   smoking: boolean;
+  airConditioning?: boolean;
   date: string;
   time: string;
   notes?: string;
@@ -62,6 +64,7 @@ export function seed(now = Date.now()): ServiceState {
       phone: phones[i],
       partySize: [2, 4, 6][i],
       smoking: [true, false, false][i],
+      airConditioning: [false, true, true][i],
       joinedAt: now - (80 - i * 10) * 60000,
       status: 'seated',
       assignedTableId: ['T2', 'T5', 'T7'][i],
@@ -107,6 +110,7 @@ export function seed(now = Date.now()): ServiceState {
           phone: phones[i + 3],
           partySize: [4, 2, 6, 3, 5][i],
           smoking: [false, true, false, false, true][i],
+          airConditioning: [true, false, true, false, false][i],
           joinedAt: now - [18, 11, 9, 6, 3][i] * 60000,
           estimatedWaitMinutes: [10, 10, 20, 15, 25][i],
           status: 'waiting',
@@ -120,6 +124,7 @@ export function seed(now = Date.now()): ServiceState {
         phone: '9123 4567',
         partySize: 4,
         smoking: true,
+        airConditioning: false,
         date: SERVICE_DATE,
         time: '19:30',
         notes: 'Outside, by the entrance if possible',
@@ -132,6 +137,7 @@ export function seed(now = Date.now()): ServiceState {
         phone: '9234 5678',
         partySize: 6,
         smoking: false,
+        airConditioning: true,
         date: SERVICE_DATE,
         time: '20:00',
         notes: 'Family dinner · one child',
@@ -143,6 +149,7 @@ export function seed(now = Date.now()): ServiceState {
         phone: '9345 6789',
         partySize: 2,
         smoking: false,
+        airConditioning: true,
         date: SERVICE_DATE,
         time: '20:30',
         status: 'upcoming',
@@ -161,8 +168,13 @@ export function suitableTables(
   size: number,
   reservationId?: string,
   smoking = false,
+  airConditioning = false,
 ) {
-  const preferred: SeatingArea = smoking ? 'outdoor' : 'indoor';
+  const preferred: SeatingArea = airConditioning
+    ? 'indoor'
+    : smoking
+      ? 'outdoor'
+      : 'indoor';
   return state.tables
     .filter(
       (t) =>
@@ -197,6 +209,7 @@ export function seatParty(
       party.partySize,
       kind === 'reservation' ? id : undefined,
       party.smoking,
+      party.airConditioning,
     ).some((t) => t.id === tableId)
   )
     return state;

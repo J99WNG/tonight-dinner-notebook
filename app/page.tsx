@@ -135,6 +135,7 @@ export default function Home() {
             phone: data.phone,
             partySize: data.partySize,
             smoking: data.smoking,
+            airConditioning: data.airConditioning,
             joinedAt: Date.now(),
             estimatedWaitMinutes: 15,
             status: 'waiting',
@@ -265,6 +266,7 @@ export default function Home() {
           seatTarget.partySize,
           modal.kind === 'reservation' ? seatTarget.id : undefined,
           seatTarget.smoking,
+          seatTarget.airConditioning,
         )
       : [];
   const editBooking =
@@ -372,20 +374,13 @@ export default function Home() {
               {t('nav.' + view.toLowerCase())}
               <span>.</span>
             </h1>
-            <p>
-              {view === 'Tonight'
-                ? t('tagline.tonight')
-                : view === 'Bookings'
-                  ? t('tagline.bookings')
-                  : t('tagline.tables')}
-            </p>
           </div>
           <div
             className="service-time"
             aria-label={`${t('service.hkTime')}: ${clock}`}
           >
-            <Moon size={18} /> {t('service.dinner')}{' '}
-            <span>{t('service.hkTime')}</span> <b>{clock}</b>
+            <Clock3 aria-hidden="true" />
+            <b>{clock}</b>
           </div>
         </div>
         {storageIssue && (
@@ -506,6 +501,7 @@ export default function Home() {
                             q.partySize,
                             undefined,
                             q.smoking,
+                            q.airConditioning,
                           ).length > 0
                         }
                         onSeat={() =>
@@ -1029,7 +1025,7 @@ export default function Home() {
                   time: editBooking.time,
                   status: t('status.' + editBooking.status),
                 })
-              : t('tagline.bookings')
+              : t('booking.formHelp')
           }
           onClose={() => setModal(null)}
         >
@@ -1040,48 +1036,45 @@ export default function Home() {
                 t={t}
                 booking
                 initial={editBooking}
+                tables={state.tables}
+                reservations={state.reservations}
                 onSubmit={(data) => {
                   const updated = {
                     ...data,
                     id: editBooking?.id || crypto.randomUUID(),
                     status: editBooking?.status || 'upcoming',
                   } as Reservation;
-                  const held = state.tables.find(
-                    (t) =>
-                      t.reservationId === editBooking?.id &&
-                      t.status === 'reserved',
-                  );
-                  const keepHold =
-                    held &&
-                    data.partySize <= held.capacity &&
-                    data.date === SERVICE_DATE;
                   commit(
                     {
                       ...state,
                       reservations: editBooking
                         ? state.reservations.map((r) =>
                             r.id === editBooking.id
-                              ? {
-                                  ...updated,
-                                  assignedTableId: keepHold
-                                    ? held.id
-                                    : undefined,
-                                }
+                              ? updated
                               : r,
                           )
                         : [...state.reservations, updated],
-                      tables:
-                        held && !keepHold
-                          ? state.tables.map((t) =>
-                              t.id === held.id
-                                ? {
-                                    ...t,
-                                    status: 'available',
-                                    reservationId: undefined,
-                                  }
-                                : t,
-                            )
-                          : state.tables,
+                      tables: state.tables.map((table) => {
+                        if (
+                          table.reservationId === updated.id &&
+                          table.id !== data.assignedTableId
+                        )
+                          return {
+                            ...table,
+                            status: 'available',
+                            reservationId: undefined,
+                          };
+                        if (
+                          table.id === data.assignedTableId &&
+                          data.date === SERVICE_DATE
+                        )
+                          return {
+                            ...table,
+                            status: 'reserved',
+                            reservationId: updated.id,
+                          };
+                        return table;
+                      }),
                     },
                     editBooking ? 'Booking updated' : 'Booking added',
                   );
