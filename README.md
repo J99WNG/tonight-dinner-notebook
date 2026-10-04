@@ -29,8 +29,11 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full workflow and commit conventi
 ## Source map
 
 - `app/page.tsx`: Tonight, Bookings, Tables, and action orchestration.
+- `components/booking-calendar.tsx`: reusable seven-day date navigation and booking counts.
+- `components/table-overview.tsx`: room/area grouping and status filtering for tables.
 - `components/service-ui.tsx`: table, queue, and reservation cards; accessible bottom sheet; shared party form.
 - `components/ui/`: only the three used scaffold primitives: Button, Dialog and Input.
+- `lib/dates.ts`: timezone-safe service-date formatting and week navigation.
 - `lib/restaurant.ts`: TypeScript models, realistic seed data, table suitability and atomic seating transition.
 - `lib/storage.ts`: isolated localStorage adapter with version checks and fallback.
 - `lib/i18n.ts`: English, Traditional Chinese and Simplified Chinese interface copy.
@@ -40,6 +43,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full workflow and commit conventi
 
 - Default party size is two. A surname is optional for walk-ins; a phone number is required for every party. The 7+ button asks for an exact size; tables cannot be overfilled.
 - Every table is marked indoor or outdoor. Smoking parties see suitable outdoor tables first; non-smoking parties see indoor tables first. This is a preference, so the manager can still use any suitable available table.
+- Tables also carry a room assignment. The Tables view can group the same records by room or by indoor/outdoor area without duplicating data.
+- Bookings are presented in selectable seven-day windows. Creating a booking from a selected day pre-fills that date; backend calendar syncing remains intentionally out of scope.
 - Available tables are then ordered by smallest fit. A reservation’s held table comes first and cannot be used for an unrelated party.
 - A queue entry becomes seated only after an explicit table selection. The seating transition updates both records together.
 - Finishing goes to Cleaning. Mark ready is a separate manager action.

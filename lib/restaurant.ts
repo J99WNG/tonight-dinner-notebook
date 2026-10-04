@@ -1,10 +1,12 @@
 export type TableStatus = 'available' | 'occupied' | 'reserved' | 'cleaning';
 export type SeatingArea = 'indoor' | 'outdoor';
+export type DiningRoom = 'terrace' | 'main' | 'side';
 export interface RestaurantTable {
   id: string;
   name: string;
   capacity: number;
   area: SeatingArea;
+  room?: DiningRoom;
   status: TableStatus;
   currentPartyId?: string;
   seatedAt?: number;
@@ -74,31 +76,42 @@ export function seed(now = Date.now()): ServiceState {
     id: string,
     capacity: number,
     area: SeatingArea,
+    room: DiningRoom,
     status: TableStatus,
     extra: Partial<RestaurantTable> = {},
-  ): RestaurantTable => ({ id, name: id, capacity, area, status, ...extra });
+  ): RestaurantTable => ({
+    id,
+    name: id,
+    capacity,
+    area,
+    room,
+    status,
+    ...extra,
+  });
   return {
     version: 2,
     startedAt: now,
     nextNumber: 17,
     tables: [
-      table('T1', 2, 'outdoor', 'available'),
-      table('T2', 2, 'outdoor', 'occupied', {
+      table('T1', 2, 'outdoor', 'terrace', 'available'),
+      table('T2', 2, 'outdoor', 'terrace', 'occupied', {
         currentPartyId: 'd0',
         seatedAt: now - 38 * 60000,
       }),
-      table('T3', 4, 'outdoor', 'available'),
-      table('T4', 4, 'outdoor', 'reserved', { reservationId: 'r1' }),
-      table('T5', 4, 'indoor', 'occupied', {
+      table('T3', 4, 'outdoor', 'terrace', 'available'),
+      table('T4', 4, 'outdoor', 'main', 'reserved', {
+        reservationId: 'r1',
+      }),
+      table('T5', 4, 'indoor', 'main', 'occupied', {
         currentPartyId: 'd1',
         seatedAt: now - 52 * 60000,
       }),
-      table('T6', 6, 'indoor', 'cleaning'),
-      table('T7', 6, 'indoor', 'occupied', {
+      table('T6', 6, 'indoor', 'main', 'cleaning'),
+      table('T7', 6, 'indoor', 'side', 'occupied', {
         currentPartyId: 'd2',
         seatedAt: now - 24 * 60000,
       }),
-      table('T8', 8, 'indoor', 'available'),
+      table('T8', 8, 'indoor', 'side', 'available'),
     ],
     queue: [
       ...occupied,
@@ -156,6 +169,13 @@ export function seed(now = Date.now()): ServiceState {
       },
     ],
   };
+}
+export function roomForTable(table: RestaurantTable): DiningRoom {
+  if (table.room) return table.room;
+  const number = Number(table.id.replace(/\D/g, ''));
+  if (number <= 3) return 'terrace';
+  if (number <= 6) return 'main';
+  return 'side';
 }
 export const statusText: Record<TableStatus, string> = {
   available: 'Ready',

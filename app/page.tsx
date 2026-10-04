@@ -42,13 +42,20 @@ import {
   duration,
   type PartyInput,
 } from '@/components/service-ui';
+import { BookingCalendar } from '@/components/booking-calendar';
+import {
+  TableOverview,
+  type TableFilter,
+  type TableGrouping,
+} from '@/components/table-overview';
+import { addDays, formatServiceDate, sevenDayWindow } from '@/lib/dates';
 type View = 'Tonight' | 'Bookings' | 'Tables';
 type Modal =
   | { type: 'walk-in' }
   | { type: 'seat'; id: string; kind: 'queue' | 'reservation' }
   | { type: 'table'; id: string }
   | { type: 'queue'; id: string }
-  | { type: 'booking'; id?: string }
+  | { type: 'booking'; id?: string; date?: string }
   | { type: 'reset' }
   | null;
 const destinations = [
@@ -73,9 +80,15 @@ export default function Home() {
   const [toast, setToast] = useState('');
   const [previous, setPrevious] = useState<ServiceState | null>(null);
   const [storageIssue, setStorageIssue] = useState(false);
-  const [tableFilter, setTableFilter] = useState('all');
+  // These two display preferences change how existing data is presented;
+  // they do not rewrite table or booking records.
+  const [tableFilter, setTableFilter] = useState<TableFilter>('all');
+  const [tableGrouping, setTableGrouping] = useState<TableGrouping>('room');
+  const [bookingWeekStart, setBookingWeekStart] = useState(SERVICE_DATE);
+  const [selectedBookingDate, setSelectedBookingDate] = useState(SERVICE_DATE);
   const [language, setLanguage] = useState<Language>('en');
   const t = translator(language);
+  const bookingWeek = sevenDayWindow(bookingWeekStart);
   useEffect(() => {
     const s = loadService();
     const savedLanguage = localStorage.getItem('dai-pai-dong-language');
@@ -275,25 +288,18 @@ export default function Home() {
       : undefined;
   const tableGrid = (
     <div className="table-grid">
-      {state.tables
-        .filter(
-          (t) =>
-            view !== 'Tables' ||
-            tableFilter === 'all' ||
-            t.status === tableFilter,
-        )
-        .map((tableItem) => (
-          <TableCard
-            key={tableItem.id}
-            table={tableItem}
-            now={now}
-            reservation={state.reservations.find(
-              (r) => r.id === tableItem.reservationId,
-            )}
-            onClick={() => setModal({ type: 'table', id: tableItem.id })}
-            t={t}
-          />
-        ))}
+      {state.tables.map((tableItem) => (
+        <TableCard
+          key={tableItem.id}
+          table={tableItem}
+          now={now}
+          reservation={state.reservations.find(
+            (r) => r.id === tableItem.reservationId,
+          )}
+          onClick={() => setModal({ type: 'table', id: tableItem.id })}
+          t={t}
+        />
+      ))}
     </div>
   );
   const bookingCard = (r: Reservation) => (
@@ -315,33 +321,14 @@ export default function Home() {
     <div className="app">
       <header className="brand">
         <div className="restaurant-brand">
-          <svg
-            className="brand-mark"
-            viewBox="0 0 640 700"
-            aria-hidden="true"
-          >
+          <svg className="brand-mark" viewBox="0 0 640 700" aria-hidden="true">
             <image
               href="/supreme-roast-goose-king-logo.svg"
               width="640"
               height="826"
             />
           </svg>
-          <span className="sr-only">新志興至尊燒鵝大王</span>
-          <div className="brand-lockup">
-            <svg
-              className="brand-character-row"
-              viewBox="0 725 640 101"
-              aria-hidden="true"
-            >
-              <image
-                href="/supreme-roast-goose-king-logo.svg"
-                width="640"
-                height="826"
-              />
-            </svg>
-            <strong>新志興至尊燒鵝大王</strong>
-            <small>晚市簿 · Dinner notebook</small>
-          </div>
+          <strong className="brand-title">新志興訂位簿</strong>
         </div>
         <div className="header-actions">
           <div className="language-switch" aria-label="Language / 語言 / 语言">
@@ -369,7 +356,15 @@ export default function Home() {
       <main aria-busy={!hydrated}>
         <div className="page-heading">
           <div>
-            <p className="service-date">{t('date.service')}</p>
+            <p className="service-date">
+              {view === 'Bookings'
+                ? formatServiceDate(selectedBookingDate, language, {
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'long',
+                  })
+                : t('date.service')}
+            </p>
             <h1>
               {t('nav.' + view.toLowerCase())}
               <span>.</span>
@@ -470,25 +465,26 @@ export default function Home() {
             </div>
             <section className="queue-section">
               <div className="section-heading">
-                <h2>
-                  {t('queue.title')}{' '}
-                  <span>{t('queue.groups', { count: waiting.length })}</span>
-                </h2>
+                <div className="queue-heading-copy">
+                  <strong>
+                    {t('queue.peopleWaiting', {
+                      count: waiting.reduce(
+                        (sum, party) => sum + party.partySize,
+                        0,
+                      ),
+                    })}
+                  </strong>
+                  <h2>
+                    {t('queue.title')}{' '}
+                    <span>{t('queue.groups', { count: waiting.length })}</span>
+                  </h2>
+                </div>
                 <Button onClick={() => setModal({ type: 'walk-in' })}>
                   <Plus /> {t('queue.walkin')}
                 </Button>
               </div>
               {waiting.length ? (
                 <>
-                  <div className="queue-intro">
-                    <span className="busy-dot" />
-                    {waiting.length >= 4 ? t('queue.busy') : t('queue.moving')}
-                    <span>
-                      {t('queue.peopleWaiting', {
-                        count: waiting.reduce((sum, q) => sum + q.partySize, 0),
-                      })}
-                    </span>
-                  </div>
                   <div className="queue-list">
                     {waiting.map((q) => (
                       <QueueCard
@@ -536,41 +532,73 @@ export default function Home() {
             </section>
           </div>
         ) : view === 'Bookings' ? (
-          <section className="secondary-view">
-            <div className="section-heading">
-              <h2>{t('booking.book')}</h2>
-              <Button onClick={() => setModal({ type: 'booking' })}>
-                <Plus /> {t('booking.add')}
-              </Button>
-            </div>
-            {Array.from(
-              new Set([SERVICE_DATE, ...state.reservations.map((r) => r.date)]),
-            )
-              .sort()
-              .map((date) => (
-                <div key={date} className="booking-day">
+          <section className="secondary-view booking-view">
+            <BookingCalendar
+              dates={bookingWeek}
+              selectedDate={selectedBookingDate}
+              reservations={state.reservations}
+              language={language}
+              onSelectDate={setSelectedBookingDate}
+              onPreviousWeek={() => {
+                const start = addDays(bookingWeekStart, -7);
+                setBookingWeekStart(start);
+                setSelectedBookingDate(start);
+              }}
+              onNextWeek={() => {
+                const start = addDays(bookingWeekStart, 7);
+                setBookingWeekStart(start);
+                setSelectedBookingDate(start);
+              }}
+              t={t}
+            />
+            <div className="booking-day">
+              <div className="section-heading booking-day-heading">
+                <div>
                   <p className="booking-date">
-                    {date === SERVICE_DATE
-                      ? t('booking.today')
-                      : new Date(date + 'T12:00:00').toLocaleDateString(
-                          'en-GB',
-                          { weekday: 'long', day: 'numeric', month: 'long' },
-                        )}
+                    {formatServiceDate(selectedBookingDate, language, {
+                      weekday: 'long',
+                      day: 'numeric',
+                      month: 'long',
+                    })}
                   </p>
-                  <div className="booking-list">
-                    {state.reservations
-                      .filter((r) => r.date === date)
-                      .sort((a, b) => a.time.localeCompare(b.time))
-                      .map(bookingCard)}
-                  </div>
-                  {!state.reservations.some((r) => r.date === date) && (
-                    <div className="empty">
-                      <h3>{t('booking.empty')}</h3>
-                      <p>{t('booking.walkins')}</p>
-                    </div>
-                  )}
+                  <h2>
+                    {t('booking.dayCount', {
+                      count: state.reservations.filter(
+                        (reservation) =>
+                          reservation.date === selectedBookingDate,
+                      ).length,
+                    })}
+                  </h2>
                 </div>
-              ))}
+                <Button
+                  onClick={() =>
+                    setModal({
+                      type: 'booking',
+                      date: selectedBookingDate,
+                    })
+                  }
+                >
+                  <Plus /> {t('booking.add')}
+                </Button>
+              </div>
+              <div className="booking-list">
+                {state.reservations
+                  .filter(
+                    (reservation) => reservation.date === selectedBookingDate,
+                  )
+                  .sort((a, b) => a.time.localeCompare(b.time))
+                  .map(bookingCard)}
+              </div>
+              {!state.reservations.some(
+                (reservation) => reservation.date === selectedBookingDate,
+              ) && (
+                <div className="empty">
+                  <CalendarDays />
+                  <h3>{t('booking.empty')}</h3>
+                  <p>{t('booking.walkins')}</p>
+                </div>
+              )}
+            </div>
             <p className="table-hint">{t('booking.tap')}</p>
           </section>
         ) : (
@@ -581,29 +609,17 @@ export default function Home() {
                 {t('tables.ready', { count: ready.length })}
               </span>
             </div>
-            <div className="table-filters" aria-label={t('tables.filter')}>
-              {['all', 'available', 'occupied', 'reserved', 'cleaning'].map(
-                (filter) => (
-                  <Button
-                    key={filter}
-                    variant="ghost"
-                    aria-pressed={tableFilter === filter}
-                    className={tableFilter === filter ? 'selected' : ''}
-                    onClick={() => setTableFilter(filter)}
-                  >
-                    {filter === 'all' ? t('tables.all') : t('status.' + filter)}
-                  </Button>
-                ),
-              )}
-            </div>
-            {tableGrid}
-            {tableFilter !== 'all' &&
-              !state.tables.some((t) => t.status === tableFilter) && (
-                <div className="empty">
-                  <h3>No {tableFilter} tables</h3>
-                  <p>Choose another status to see more tables.</p>
-                </div>
-              )}
+            <TableOverview
+              tables={state.tables}
+              reservations={state.reservations}
+              now={now}
+              grouping={tableGrouping}
+              statusFilter={tableFilter}
+              onGroupingChange={setTableGrouping}
+              onStatusFilterChange={setTableFilter}
+              onOpenTable={(id) => setModal({ type: 'table', id })}
+              t={t}
+            />
             <p className="table-hint">
               {t('tables.count', {
                 count: state.tables.length,
@@ -1036,6 +1052,7 @@ export default function Home() {
                 t={t}
                 booking
                 initial={editBooking}
+                defaultDate={modal.date || selectedBookingDate}
                 tables={state.tables}
                 reservations={state.reservations}
                 onSubmit={(data) => {
@@ -1049,9 +1066,7 @@ export default function Home() {
                       ...state,
                       reservations: editBooking
                         ? state.reservations.map((r) =>
-                            r.id === editBooking.id
-                              ? updated
-                              : r,
+                            r.id === editBooking.id ? updated : r,
                           )
                         : [...state.reservations, updated],
                       tables: state.tables.map((table) => {

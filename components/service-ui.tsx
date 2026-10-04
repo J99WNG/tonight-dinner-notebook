@@ -270,6 +270,7 @@ export interface PartyInput {
 export function PartyForm({
   booking = false,
   initial,
+  defaultDate = SERVICE_DATE,
   tables = [],
   reservations = [],
   onSubmit,
@@ -277,6 +278,7 @@ export function PartyForm({
 }: {
   booking?: boolean;
   initial?: Reservation;
+  defaultDate?: string;
   tables?: RestaurantTable[];
   reservations?: Reservation[];
   onSubmit: (data: PartyInput) => void;
@@ -292,7 +294,7 @@ export function PartyForm({
     initial?.airConditioning ?? false,
   );
   const [large, setLarge] = useState((initial?.partySize || 2) >= 7);
-  const [date, setDate] = useState(initial?.date || SERVICE_DATE);
+  const [date, setDate] = useState(initial?.date || defaultDate);
   const [time, setTime] = useState(initial?.time || '19:30');
   const [assignedTableId, setAssignedTableId] = useState(
     initial?.assignedTableId || '',
@@ -323,8 +325,7 @@ export function PartyForm({
           Number(
             a.area ===
               (airConditioning ? 'indoor' : smoking ? 'outdoor' : 'indoor'),
-          ) ||
-        a.capacity - b.capacity,
+          ) || a.capacity - b.capacity,
     );
   function submit(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -511,9 +512,7 @@ export function PartyForm({
                     key={table.id}
                     type="button"
                     variant="outline"
-                    className={
-                      assignedTableId === table.id ? 'selected' : ''
-                    }
+                    className={assignedTableId === table.id ? 'selected' : ''}
                     aria-pressed={assignedTableId === table.id}
                     onClick={() =>
                       setAssignedTableId((current) =>
