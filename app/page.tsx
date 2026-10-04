@@ -48,7 +48,12 @@ import {
   type TableFilter,
   type TableGrouping,
 } from '@/components/table-overview';
-import { addDays, formatServiceDate, sevenDayWindow } from '@/lib/dates';
+import {
+  addDays,
+  formatServiceDate,
+  hongKongToday,
+  sevenDayWindow,
+} from '@/lib/dates';
 type View = 'Tonight' | 'Bookings' | 'Tables';
 type Modal =
   | { type: 'walk-in' }
@@ -323,7 +328,7 @@ export default function Home() {
         <div className="restaurant-brand">
           <svg className="brand-mark" viewBox="0 0 640 700" aria-hidden="true">
             <image
-              href="/supreme-roast-goose-king-logo.svg"
+              href="supreme-roast-goose-king-logo.svg"
               width="640"
               height="826"
             />
@@ -331,6 +336,16 @@ export default function Home() {
           <strong className="brand-title">新志興訂位簿</strong>
         </div>
         <div className="header-actions">
+          <div
+            className="header-clock"
+            aria-label={`${t('service.hkTime')}: ${clock}`}
+          >
+            <Clock3 aria-hidden="true" />
+            <span>
+              <small>{t('service.currentTime')}</small>
+              <b>{clock}</b>
+            </span>
+          </div>
           <div className="language-switch" aria-label="Language / 語言 / 语言">
             {(
               [
@@ -370,13 +385,6 @@ export default function Home() {
               <span>.</span>
             </h1>
           </div>
-          <div
-            className="service-time"
-            aria-label={`${t('service.hkTime')}: ${clock}`}
-          >
-            <Clock3 aria-hidden="true" />
-            <b>{clock}</b>
-          </div>
         </div>
         {storageIssue && (
           <output className="storage-warning">{t('storage.warning')}</output>
@@ -410,7 +418,7 @@ export default function Home() {
                       )
                     }
                   >
-                    <CalendarDays size={15} />
+                    <CalendarDays size={20} />
                     <span>
                       <b>
                         {nextBooking.time} · {nextBooking.customerName}
@@ -424,7 +432,7 @@ export default function Home() {
                           ? t('booking.dueNow')
                           : t('booking.dueSoon')}
                     </small>
-                    <ArrowRight size={14} />
+                    <ArrowRight size={18} />
                   </button>
                 )}
               </section>
@@ -447,7 +455,7 @@ export default function Home() {
                       {reservations.map(bookingCard)}
                     </div>
                     <p className="table-hint">
-                      <Clock3 size={12} /> {t('booking.held')}
+                      <Clock3 size={18} /> {t('booking.held')}
                     </p>
                   </>
                 ) : (
@@ -459,26 +467,13 @@ export default function Home() {
                 )}
               </section>
               <div className="location">
-                <MapPin size={13} />
+                <MapPin size={18} />
                 <span>牛池灣 · 60A Lung Chi Path, Ngau Chi Wan</span>
               </div>
             </div>
             <section className="queue-section">
               <div className="section-heading">
-                <div className="queue-heading-copy">
-                  <strong>
-                    {t('queue.peopleWaiting', {
-                      count: waiting.reduce(
-                        (sum, party) => sum + party.partySize,
-                        0,
-                      ),
-                    })}
-                  </strong>
-                  <h2>
-                    {t('queue.title')}{' '}
-                    <span>{t('queue.groups', { count: waiting.length })}</span>
-                  </h2>
-                </div>
+                <h2>{t('queue.groupsWaiting', { count: waiting.length })}</h2>
                 <Button onClick={() => setModal({ type: 'walk-in' })}>
                   <Plus /> {t('queue.walkin')}
                 </Button>
@@ -509,7 +504,7 @@ export default function Home() {
                     ))}
                   </div>
                   <p className="queue-note">
-                    <NotebookPen size={13} /> {t('queue.order')}
+                    <NotebookPen size={18} /> {t('queue.order')}
                   </p>
                 </>
               ) : (
@@ -548,6 +543,11 @@ export default function Home() {
                 const start = addDays(bookingWeekStart, 7);
                 setBookingWeekStart(start);
                 setSelectedBookingDate(start);
+              }}
+              onToday={() => {
+                const today = hongKongToday();
+                setBookingWeekStart(today);
+                setSelectedBookingDate(today);
               }}
               t={t}
             />
@@ -691,7 +691,7 @@ export default function Home() {
             aria-label="Dismiss notification"
             onClick={() => setToast('')}
           >
-            <X size={16} />
+            <X size={20} />
           </button>
         </output>
       )}

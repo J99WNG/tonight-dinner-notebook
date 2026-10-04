@@ -12,6 +12,7 @@ export function BookingCalendar({
   onSelectDate,
   onPreviousWeek,
   onNextWeek,
+  onToday,
   t,
 }: {
   dates: string[];
@@ -21,6 +22,7 @@ export function BookingCalendar({
   onSelectDate: (date: string) => void;
   onPreviousWeek: () => void;
   onNextWeek: () => void;
+  onToday: () => void;
   t: Translate;
 }) {
   // Navigation and date selection live here; the parent remains responsible
@@ -31,19 +33,16 @@ export function BookingCalendar({
       aria-label={t('booking.weekSchedule')}
     >
       <div className="week-navigation">
-        <Button
-          variant="ghost"
-          onClick={onPreviousWeek}
-          aria-label={t('booking.previousWeek')}
-        >
+        <Button variant="ghost" onClick={onPreviousWeek}>
           <ChevronLeft aria-hidden="true" />
+          {t('booking.previousWeek')}
         </Button>
-        <b>{formatWeekRange(dates[0], language)}</b>
-        <Button
-          variant="ghost"
-          onClick={onNextWeek}
-          aria-label={t('booking.nextWeek')}
-        >
+        <div className="week-navigation-center">
+          <b>{formatWeekRange(dates[0], language)}</b>
+          <Button onClick={onToday}>{t('booking.today')}</Button>
+        </div>
+        <Button variant="ghost" onClick={onNextWeek}>
+          {t('booking.nextWeek')}
           <ChevronRight aria-hidden="true" />
         </Button>
       </div>

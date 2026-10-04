@@ -16,6 +16,10 @@ npm run build
 
 The generated React/TypeScript Sites starter uses Vinext on Vite and Tailwind CSS. The build exports static files to `dist/client`; no application server, accounts, API, or database is required. The three destinations are local views within one page.
 
+## Temporary hosting
+
+Pushes to `main` deploy the static export to GitHub Pages through `.github/workflows/pages.yml`. The build uses `/tonight-dinner-notebook/` as its asset base only inside GitHub Actions; local development and the existing Sites project continue to use `/`.
+
 ## Branch workflow
 
 - `main` is the production-ready branch. Changes arrive through reviewed pull requests from `develop`.

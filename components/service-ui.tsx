@@ -88,17 +88,17 @@ export function TableCard({
       <span className="table-top">
         <b>{table.name}</b>
         {table.status === 'available' ? (
-          <Check size={16} />
+          <Check size={20} />
         ) : table.status === 'cleaning' ? (
-          <Sparkles size={16} />
+          <Sparkles size={20} />
         ) : table.status === 'reserved' ? (
-          <CalendarDays size={16} />
+          <CalendarDays size={20} />
         ) : (
-          <Clock3 size={16} />
+          <Clock3 size={20} />
         )}
       </span>
       <span className="capacity">
-        <Users size={13} />
+        <Users size={18} />
         {table.capacity} · {t('area.' + table.area)}
       </span>
       <span className="table-status">
@@ -251,7 +251,7 @@ export function ReservationCard({
           {t('queue.seat')} <ArrowUpRight />
         </Button>
       ) : (
-        <Check size={18} />
+        <Check size={20} />
       )}
     </article>
   );
