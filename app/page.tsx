@@ -56,6 +56,7 @@ import {
   hongKongToday,
   sevenDayWindow,
 } from '@/lib/dates';
+import { cn } from '@/lib/utils';
 type View = 'Tonight' | 'Bookings' | 'Tables';
 type Modal =
   | { type: 'walk-in' }
@@ -70,6 +71,24 @@ const destinations = [
   { name: 'Bookings' as const, icon: CalendarDays },
   { name: 'Tables' as const, icon: LayoutGrid },
 ];
+const operationalType =
+  'font-mono tracking-[0.015em] tabular-nums [font-feature-settings:"tnum"_1]';
+const operationalSurface = 'rounded-[14px] bg-paper';
+const supportingText =
+  'mt-3.5 flex items-center gap-1.5 text-base leading-normal text-ink-muted';
+const emptyState =
+  'flex flex-col items-center gap-3 rounded-xl border border-dashed border-border px-5 py-[30px] text-center text-ink-muted [&>h3]:text-[17px] [&>h3]:text-foreground [&>p]:max-w-[300px] [&>p]:text-base [&>p]:leading-relaxed';
+const wideButton = 'min-h-[52px] w-full text-base';
+const detailBlock =
+  'flex flex-col gap-2.5 rounded-xl bg-muted p-6 [&>h3]:text-lg [&>h3]:font-semibold [&>p]:text-base [&>p]:leading-normal [&>p]:text-ink-muted';
+const detailLine =
+  'inline-flex items-center gap-1.5 [&>svg]:size-5 [&>svg]:text-brand-orange-700';
+const formRow =
+  'flex gap-3 [&>*]:min-w-0 [&>*]:flex-1 [&>button]:px-2 [&>button]:text-base [&>button]:whitespace-normal';
+const ticket = cn(
+  operationalType,
+  'grid h-[46px] min-w-[49px] rotate-[-0.7deg] place-items-center rounded-sm border-0 bg-ticket text-[17px] font-bold text-ticket-foreground shadow-[0_2px_5px_oklch(31%_0.092_12/9%)]',
+);
 const hongKongClock = new Intl.DateTimeFormat('en-GB', {
   timeZone: 'Asia/Hong_Kong',
   hour: '2-digit',
@@ -294,7 +313,7 @@ export default function Home() {
       ? state.reservations.find((r) => r.id === modal.id)
       : undefined;
   const tableGrid = (
-    <div className="table-grid">
+    <div className="grid grid-cols-2 gap-3 min-[769px]:grid-cols-4">
       {state.tables.map((tableItem) => (
         <TableCard
           key={tableItem.id}
@@ -325,35 +344,52 @@ export default function Home() {
     />
   );
   return (
-    <div className="app">
-      <header className="brand">
-        <div className="restaurant-brand">
-          <svg className="brand-mark" viewBox="0 0 640 700" aria-hidden="true">
+    <div className="mx-auto max-w-[1240px]">
+      <header className="mx-5 flex min-h-[92px] items-center gap-[9px] border-b border-border min-[769px]:mx-12 min-[769px]:min-h-28 min-[769px]:gap-5">
+        <div className="flex min-w-0 items-center gap-2 min-[769px]:gap-3.5">
+          <svg
+            className="h-[50px] w-[42px] overflow-hidden min-[769px]:h-[72px] min-[769px]:w-[62px]"
+            viewBox="0 0 640 700"
+            aria-hidden="true"
+          >
             <image
               href="supreme-roast-goose-king-logo.svg"
               width="640"
               height="826"
             />
           </svg>
-          <strong className="brand-title">新志興訂位簿</strong>
+          <strong className="text-base leading-[1.2] tracking-[0.04em] whitespace-nowrap min-[769px]:leading-[1.3]">
+            新志興訂位簿
+          </strong>
         </div>
-        <div className="header-actions">
-          <span className="service-pill">
-            <i /> {t('service.open')}
+        <div className="ml-auto flex items-center gap-2 min-[769px]:gap-[18px]">
+          <span className="hidden items-center gap-[7px] text-base min-[761px]:flex">
+            <i className="size-[7px] rounded-full bg-status-ready-border" />{' '}
+            {t('service.open')}
           </span>
 
           <div
-            className="header-clock operational-type"
+            className={cn(
+              operationalType,
+              'inline-flex min-h-11 items-center gap-[9px] text-foreground [&>svg]:size-[22px] [&>svg]:text-brand-orange-700',
+            )}
             aria-label={`${t('service.hkTime')}: ${clock}`}
           >
             <Clock3 aria-hidden="true" />
-            <span>
-              <small>{t('service.currentTime')}</small>
-              <b>{clock}</b>
+            <span className="flex flex-col items-start gap-px">
+              <small className="sr-only text-base leading-[1.1] text-ink-muted min-[761px]:not-sr-only">
+                {t('service.currentTime')}
+              </small>
+              <b className="text-lg leading-[1.1] min-[761px]:text-[22px]">
+                {clock}
+              </b>
             </span>
           </div>
 
-          <div className="language-switch" aria-label="Language / 語言 / 语言">
+          <div
+            className="flex rounded-[9px] bg-muted p-[3px]"
+            aria-label="Language / 語言 / 语言"
+          >
             {(
               [
                 ['en', 'EN'],
@@ -362,6 +398,7 @@ export default function Home() {
               ] as const
             ).map(([code, label]) => (
               <button
+                className="min-h-8 min-w-[31px] rounded-[7px] border-0 bg-transparent text-base text-ink-muted aria-pressed:bg-paper aria-pressed:font-bold aria-pressed:text-brand-orange-800 aria-pressed:shadow-[0_1px_5px_oklch(27.9%_0.102_12.9/7%)] min-[761px]:min-h-[34px] min-[761px]:min-w-[35px]"
                 key={code}
                 aria-pressed={language === code}
                 onClick={() => changeLanguage(code)}
@@ -372,14 +409,22 @@ export default function Home() {
           </div>
         </div>
       </header>
-      <main aria-busy={!hydrated}>
-        <div className="page-heading">
-          <h1>
+      <main
+        className="px-5 pt-6 pb-[125px] min-[769px]:px-12 min-[769px]:pt-9 min-[769px]:pb-[130px]"
+        aria-busy={!hydrated}
+      >
+        <div className="mb-6 flex flex-col items-start justify-between gap-x-10 gap-y-2 min-[769px]:flex-row min-[769px]:items-baseline min-[769px]:gap-y-5">
+          <h1 className="my-2 text-[38px] leading-[1.2] font-semibold tracking-[-2.5px] min-[769px]:text-5xl [&>span]:text-brand-orange-600">
             {t('nav.' + view.toLowerCase())}
             <span>.</span>
           </h1>
 
-          <p className="service-date operational-type">
+          <p
+            className={cn(
+              operationalType,
+              'text-xl font-bold text-brand-red-700 sm:text-3xl',
+            )}
+          >
             {formatServiceDate(
               view === 'Bookings' ? selectedBookingDate : SERVICE_DATE,
               language,
@@ -392,12 +437,14 @@ export default function Home() {
           </p>
         </div>
         {storageIssue && (
-          <output className="storage-warning">{t('storage.warning')}</output>
+          <output className="mb-5 block bg-status-cleaning p-[15px] leading-normal text-status-cleaning-foreground">
+            {t('storage.warning')}
+          </output>
         )}
         {view === 'Tonight' ? (
-          <div className="workspace">
-            <div className="left-column">
-              <section className="table-section">
+          <div className="flex flex-col gap-6 min-[769px]:grid min-[769px]:grid-cols-[1fr_1.1fr] min-[769px]:[grid-template-areas:'tables_tables'_'bookings_queue'_'location_queue'] min-[769px]:gap-10">
+            <div className="contents">
+              <section className="order-0 min-[769px]:[grid-area:tables]">
                 <SectionHeading
                   heading={t('tables.title')}
                   context={
@@ -405,17 +452,25 @@ export default function Home() {
                       <span>
                         {t('tables.inGroup', { count: state.tables.length })}
                       </span>
-                      <span className="ready-count operational-type">
+                      <span
+                        className={cn(
+                          operationalType,
+                          'rounded-[20px] bg-status-ready px-2.5 py-1.5 text-base text-status-ready-foreground',
+                        )}
+                      >
                         {t('tables.ready', { count: ready.length })}
                       </span>
                     </>
                   }
                 />
                 {tableGrid}
-                <p className="table-hint">{t('tables.tap')}</p>
+                <p className={supportingText}>{t('tables.tap')}</p>
                 {nextBooking && (
                   <button
-                    className="booking-reminder operational-type"
+                    className={cn(
+                      operationalType,
+                      'mt-3.5 hidden min-h-[46px] w-full items-center gap-[7px] rounded-[9px] border border-brand-orange-200 bg-brand-orange-100 p-2.5 text-left text-base text-brand-red-700 max-[760px]:flex [&>span]:flex-1 [&_b]:font-semibold',
+                    )}
                     onClick={() =>
                       setModal(
                         nextBooking.status === 'arrived'
@@ -446,7 +501,7 @@ export default function Home() {
                   </button>
                 )}
               </section>
-              <section className="tonight-bookings booking-surface">
+              <section className="order-2 mt-0 min-[769px]:mt-[5px] min-[769px]:[grid-area:bookings]">
                 <SectionHeading
                   heading={t('booking.coming')}
                   context={t('booking.dayCount', {
@@ -456,7 +511,7 @@ export default function Home() {
                     <Button
                       variant="tertiary"
                       onClick={() => setView('Bookings')}
-                      className="text-action"
+                      className="min-h-11 text-base"
                     >
                       {t('booking.all')} <ArrowRight />
                     </Button>
@@ -464,27 +519,27 @@ export default function Home() {
                 />
                 {reservations.length ? (
                   <>
-                    <div className="booking-list operational-surface">
+                    <div className={cn(operationalSurface, '[&>article]:px-5')}>
                       {reservations.map(bookingCard)}
                     </div>
-                    <p className="table-hint">
+                    <p className={supportingText}>
                       <Clock3 size={18} /> {t('booking.held')}
                     </p>
                   </>
                 ) : (
-                  <div className="empty">
+                  <div className={emptyState}>
                     <CalendarDays />
                     <h3>{t('booking.none')}</h3>
                     <p>{t('booking.accounted')}</p>
                   </div>
                 )}
               </section>
-              <div className="location">
+              <div className="order-3 mt-px flex items-center gap-[7px] pb-1 text-base text-ink-muted min-[769px]:[grid-area:location]">
                 <MapPin size={18} />
                 <span>牛池灣 · 60A Lung Chi Path, Ngau Chi Wan</span>
               </div>
             </div>
-            <section className="queue-section">
+            <section className="order-1 self-start min-[769px]:[grid-area:queue]">
               <SectionHeading
                 heading={t('queue.title')}
                 context={t('queue.groups', { count: waiting.length })}
@@ -496,7 +551,7 @@ export default function Home() {
               />
               {waiting.length ? (
                 <>
-                  <div className="queue-list operational-surface">
+                  <div className={cn(operationalSurface, 'overflow-hidden')}>
                     {waiting.map((q) => (
                       <QueueCard
                         key={q.id}
@@ -510,12 +565,12 @@ export default function Home() {
                       />
                     ))}
                   </div>
-                  <p className="queue-note">
+                  <p className={supportingText}>
                     <NotebookPen size={18} /> {t('queue.order')}
                   </p>
                 </>
               ) : (
-                <div className="empty">
+                <div className={emptyState}>
                   <Check />
                   <h3>{t('queue.clear')}</h3>
                   <p>{t('queue.none')}</p>
@@ -527,7 +582,7 @@ export default function Home() {
             </section>
           </div>
         ) : view === 'Bookings' ? (
-          <section className="secondary-view booking-view">
+          <section className="w-full max-w-none">
             <BookingCalendar
               dates={bookingWeek}
               selectedDate={selectedBookingDate}
@@ -551,9 +606,9 @@ export default function Home() {
               }}
               t={t}
             />
-            <div className="booking-day booking-surface operational-surface">
+            <div className={cn(operationalSurface, 'mt-7 p-6')}>
               <SectionHeading
-                className="booking-day-heading"
+                className="items-end [&_h2]:mt-[5px]"
                 heading={formatServiceDate(selectedBookingDate, language, {
                   weekday: 'long',
                   day: 'numeric',
@@ -577,7 +632,7 @@ export default function Home() {
                   </Button>
                 }
               />
-              <div className="booking-list">
+              <div>
                 {state.reservations
                   .filter(
                     (reservation) => reservation.date === selectedBookingDate,
@@ -588,21 +643,26 @@ export default function Home() {
               {!state.reservations.some(
                 (reservation) => reservation.date === selectedBookingDate,
               ) && (
-                <div className="empty">
+                <div className={emptyState}>
                   <CalendarDays />
                   <h3>{t('booking.empty')}</h3>
                   <p>{t('booking.walkins')}</p>
                 </div>
               )}
             </div>
-            <p className="table-hint">{t('booking.tap')}</p>
+            <p className={supportingText}>{t('booking.tap')}</p>
           </section>
         ) : (
-          <section className="secondary-view tables-view">
+          <section className="w-full max-w-none">
             <SectionHeading
               heading={t('tables.every')}
               context={
-                <span className="ready-count operational-type">
+                <span
+                  className={cn(
+                    operationalType,
+                    'rounded-[20px] bg-status-ready px-2.5 py-1.5 text-base text-status-ready-foreground',
+                  )}
+                >
                   {t('tables.ready', { count: ready.length })}
                 </span>
               }
@@ -624,7 +684,7 @@ export default function Home() {
               onOpenTable={(id) => setModal({ type: 'table', id })}
               t={t}
             />
-            <p className="table-hint">
+            <p className={supportingText}>
               {t('tables.count', {
                 count: state.tables.length,
                 seats: state.tables.reduce(
@@ -633,19 +693,21 @@ export default function Home() {
                 ),
               })}
             </p>
-            <div className="turnover-guide">
-              <h3>{t('demo.title')}</h3>
-              <p>{t('demo.flow')}</p>
-              <small>{t('demo.help')}</small>
+            <div className="mt-[30px] border-t border-border pt-[25px]">
+              <h3 className="text-base font-semibold">{t('demo.title')}</h3>
+              <p className="my-4 flex items-center gap-2.5 text-base">
+                {t('demo.flow')}
+              </p>
+              <small className="text-ink-muted">{t('demo.help')}</small>
             </div>
             <Button
               variant="quinary"
-              className="reset-button"
+              className="mt-10 mb-2 pl-0 text-base text-ink-muted"
               onClick={() => setModal({ type: 'reset' })}
             >
               <RotateCcw /> {t('action.reset')}
             </Button>
-            <p className="demo-note">
+            <p className="text-base leading-[1.7] text-ink-muted">
               {t('demo.note')}
               <br />
               {t('demo.clock')}
@@ -653,12 +715,19 @@ export default function Home() {
           </section>
         )}
       </main>
-      <nav className="bottom-nav" aria-label="Main navigation">
+      <nav
+        className="fixed inset-x-0 bottom-0 z-20 flex justify-around gap-1.5 border border-b-0 border-border bg-paper px-3.5 pt-1.5 pb-[max(6px,env(safe-area-inset-bottom))] shadow-[0_6px_30px_oklch(27.9%_0.102_12.9/5%)] min-[769px]:inset-x-auto min-[769px]:bottom-5 min-[769px]:left-1/2 min-[769px]:-translate-x-1/2 min-[769px]:rounded-[18px] min-[769px]:border-b min-[769px]:p-[7px]"
+        aria-label="Main navigation"
+      >
         {destinations.map(({ name, icon: Icon }) => (
           <button
             key={name}
             aria-current={view === name ? 'page' : undefined}
-            className={view === name ? 'active' : ''}
+            className={cn(
+              'relative flex min-h-[58px] min-w-0 flex-1 flex-col items-center justify-center gap-[5px] rounded-xl border-0 bg-transparent text-base text-ink-muted min-[769px]:min-h-[52px] min-[769px]:min-w-[122px] min-[769px]:flex-row min-[769px]:gap-[9px]',
+              view === name &&
+                'bg-brand-orange-100 font-bold text-brand-orange-800',
+            )}
             onClick={() => {
               setView(name);
               window.scrollTo({ top: 0 });
@@ -668,13 +737,16 @@ export default function Home() {
             <span>{t('nav.' + name.toLowerCase())}</span>
             {name === 'Bookings' &&
               state.reservations.some((r) => r.status === 'arrived') && (
-                <i className="nav-dot" />
+                <i className="size-[5px] rounded-full bg-brand-red-500" />
               )}
           </button>
         ))}
       </nav>
       {toast && (
-        <output className="toast" aria-live="polite">
+        <output
+          className="fixed bottom-[88px] left-1/2 z-70 flex w-max max-w-[calc(100%-28px)] -translate-x-1/2 items-center gap-1.5 rounded-xl bg-foreground px-2.5 py-[7px] text-base text-white shadow-[0_8px_30px_oklch(27.9%_0.102_12.9/14%)] min-[761px]:bottom-[104px] min-[761px]:gap-2.5 min-[761px]:px-3.5 min-[761px]:py-[9px] [&>svg]:text-brand-orange-200 [&>span]:max-w-[205px] min-[761px]:[&>span]:max-w-[270px] [&>button]:min-h-11 [&>button]:min-w-10 [&>button]:border-0 [&>button]:bg-transparent [&>button]:font-semibold [&>button]:text-brand-orange-100"
+          aria-live="polite"
+        >
           <Check size={18} />
           <span>{toast}</span>
           {previous && (
@@ -716,10 +788,13 @@ export default function Home() {
         >
           {choices.length ? (
             <>
-              <p className="choice-label">{t('sheet.suitable')}</p>
-              <div className="table-choices">
+              <p className="text-base font-bold tracking-[1.4px] text-ink-muted">
+                {t('sheet.suitable')}
+              </p>
+              <div className="flex flex-col gap-2">
                 {choices.map((choice, i) => (
                   <button
+                    className="flex min-h-20 w-full items-center gap-[15px] rounded-xl border border-brand-orange-200 bg-brand-orange-50 p-4 text-left [&>span:nth-child(2)]:flex-1 [&_b]:text-base [&_b]:font-semibold [&_small]:mt-[5px] [&_small]:block [&_small]:text-base [&_small]:text-ink-muted"
                     key={choice.id}
                     onClick={() => {
                       const next = seatParty(
@@ -739,7 +814,12 @@ export default function Home() {
                       );
                     }}
                   >
-                    <span className="choice-number operational-type">
+                    <span
+                      className={cn(
+                        operationalType,
+                        'min-w-[45px] text-[26px] font-semibold',
+                      )}
+                    >
                       {choice.name}
                     </span>
                     <span>
@@ -761,10 +841,12 @@ export default function Home() {
                   </button>
                 ))}
               </div>
-              <p className="form-footnote">{t('sheet.choose')}</p>
+              <p className="text-center text-base leading-[1.7] text-ink-muted">
+                {t('sheet.choose')}
+              </p>
             </>
           ) : (
-            <div className="empty">
+            <div className={emptyState}>
               <Users />
               <h3>{t('sheet.noTable')}</h3>
               <p>{t('sheet.stays')}</p>
@@ -772,7 +854,7 @@ export default function Home() {
           )}
           <Button
             variant="tertiary"
-            className="wide"
+            className={wideButton}
             onClick={() => setModal(null)}
           >
             {t('action.cancel')}
@@ -787,7 +869,7 @@ export default function Home() {
         >
           {table.status === 'occupied' ? (
             <>
-              <div className="detail-block">
+              <div className={detailBlock}>
                 <Users />
                 <h3>
                   {tableParty?.customerName || t('queue.walkin')} ·{' '}
@@ -795,13 +877,13 @@ export default function Home() {
                     count: tableParty?.partySize || table.capacity,
                   })}
                 </h3>
-                <p className="detail-line operational-type">
+                <p className={cn(detailLine, operationalType)}>
                   <Timer aria-hidden="true" />
                   {t('detail.seatedFor', {
                     duration: duration(table.seatedAt || now, now),
                   })}
                 </p>
-                <p className="detail-line">
+                <p className={detailLine}>
                   {tableParty?.smoking ? (
                     <Cigarette aria-hidden="true" />
                   ) : (
@@ -812,12 +894,12 @@ export default function Home() {
                       tableParty.smoking ? 'party.smoking' : 'party.nonSmoking',
                     )}
                 </p>
-                <p className="detail-line">
+                <p className={detailLine}>
                   <Phone aria-hidden="true" /> {tableParty?.phone}
                 </p>
               </div>
               <Button
-                className="wide"
+                className={wideButton}
                 onClick={() =>
                   commit(
                     {
@@ -840,16 +922,18 @@ export default function Home() {
               >
                 {t('action.finish')} <Check />
               </Button>
-              <p className="form-footnote">{t('sheet.cleanHelp')}</p>
+              <p className="text-center text-base leading-[1.7] text-ink-muted">
+                {t('sheet.cleanHelp')}
+              </p>
             </>
           ) : table.status === 'cleaning' ? (
             <>
-              <div className="detail-block">
+              <div className={detailBlock}>
                 <h3>{t('sheet.quickReset')}</h3>
                 <p>{t('sheet.cleanHelp')}</p>
               </div>
               <Button
-                className="wide"
+                className={wideButton}
                 onClick={() =>
                   commit(
                     {
@@ -867,12 +951,12 @@ export default function Home() {
             </>
           ) : table.status === 'reserved' && tableBooking ? (
             <>
-              <div className="detail-block">
+              <div className={detailBlock}>
                 <h3>
                   {tableBooking.customerName} ·{' '}
                   {t('party.people', { count: tableBooking.partySize })}
                 </h3>
-                <p className="operational-type">
+                <p className={operationalType}>
                   {tableBooking.time} ·{' '}
                   {tableBooking.status === 'arrived'
                     ? t('action.arrived')
@@ -881,12 +965,15 @@ export default function Home() {
                 <p>{tableBooking.notes}</p>
               </div>
               {tableBooking.status === 'upcoming' ? (
-                <Button className="wide" onClick={() => arrive(tableBooking)}>
+                <Button
+                  className={wideButton}
+                  onClick={() => arrive(tableBooking)}
+                >
                   {t('action.arrived')}
                 </Button>
               ) : (
                 <Button
-                  className="wide"
+                  className={wideButton}
                   onClick={() =>
                     setModal({
                       type: 'seat',
@@ -909,24 +996,25 @@ export default function Home() {
             </>
           ) : (
             <>
-              <p className="choice-label">{t('sheet.waitingFits')}</p>
+              <p className="text-base font-bold tracking-[1.4px] text-ink-muted">
+                {t('sheet.waitingFits')}
+              </p>
               {waiting.filter((q) => q.partySize <= table.capacity).length ? (
-                <div className="table-choices">
+                <div className="flex flex-col gap-2">
                   {waiting
                     .filter((q) => q.partySize <= table.capacity)
                     .map((q) => (
                       <button
+                        className="flex min-h-20 w-full items-center gap-[15px] rounded-xl border border-brand-orange-200 bg-brand-orange-50 p-4 text-left [&>span:nth-child(2)]:flex-1 [&_b]:text-base [&_b]:font-semibold [&_small]:mt-[5px] [&_small]:block [&_small]:text-base [&_small]:text-ink-muted"
                         key={q.id}
                         onClick={() =>
                           setModal({ type: 'seat', id: q.id, kind: 'queue' })
                         }
                       >
-                        <span className="ticket operational-type">
-                          {q.queueNumber}
-                        </span>
+                        <span className={ticket}>{q.queueNumber}</span>
                         <span>
                           <b>{q.customerName || t('queue.walkin')}</b>
-                          <small className="operational-type">
+                          <small className={operationalType}>
                             {t('party.people', { count: q.partySize })} ·{' '}
                             {t('queue.waiting', {
                               count: minutes(q.joinedAt, now),
@@ -938,7 +1026,7 @@ export default function Home() {
                     ))}
                 </div>
               ) : (
-                <div className="empty">
+                <div className={emptyState}>
                   <h3>{t('sheet.readyNext')}</h3>
                   <p>{t('sheet.noFit')}</p>
                 </div>
@@ -969,12 +1057,12 @@ export default function Home() {
           description={`${t('party.people', { count: queueParty.partySize })} · ${t('queue.waiting', { count: minutes(queueParty.joinedAt, now) })}`}
           onClose={() => setModal(null)}
         >
-          <div className="detail-block compact">
-            <p className="detail-line">
+          <div className={cn(detailBlock, 'p-4')}>
+            <p className={detailLine}>
               <Phone aria-hidden="true" />
               {t('detail.phone', { phone: queueParty.phone })}
             </p>
-            <p className="detail-line">
+            <p className={detailLine}>
               {queueParty.smoking ? (
                 <Cigarette aria-hidden="true" />
               ) : (
@@ -989,14 +1077,14 @@ export default function Home() {
             </p>
           </div>
           <Button
-            className="wide"
+            className={wideButton}
             onClick={() =>
               setModal({ type: 'seat', id: queueParty.id, kind: 'queue' })
             }
           >
             {t('queue.seat')} <ArrowUpRight />
           </Button>
-          <div className="form-row">
+          <div className={formRow}>
             <Button
               variant="tertiary"
               onClick={() =>
@@ -1104,7 +1192,7 @@ export default function Home() {
                 }}
               />
               {editBooking && (
-                <div className="form-row">
+                <div className={formRow}>
                   <Button
                     variant="tertiary"
                     onClick={() => changeBooking(editBooking.id, 'no-show')}
@@ -1121,12 +1209,12 @@ export default function Home() {
               )}
             </>
           ) : (
-            <div className="detail-block">
-              <p className="detail-line">
+            <div className={detailBlock}>
+              <p className={detailLine}>
                 <Phone aria-hidden="true" />
                 {editBooking.phone || t('detail.noPhone')}
               </p>
-              <p className="detail-line">
+              <p className={detailLine}>
                 {editBooking.smoking ? (
                   <Cigarette aria-hidden="true" />
                 ) : (
@@ -1149,14 +1237,14 @@ export default function Home() {
           onClose={() => setModal(null)}
         >
           <Button
-            className="wide"
+            className={wideButton}
             onClick={() => commit(seed(), 'Dinner service reset')}
           >
             {t('action.reset')}
           </Button>
           <Button
             variant="tertiary"
-            className="wide"
+            className={wideButton}
             onClick={() => setModal(null)}
           >
             {t('action.keep')}

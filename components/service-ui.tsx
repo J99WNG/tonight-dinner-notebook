@@ -31,6 +31,22 @@ import {
   SERVICE_DATE,
 } from '@/lib/restaurant';
 import type { Translate } from '@/lib/i18n';
+import { cn } from '@/lib/utils';
+
+const operationalType =
+  'font-mono tracking-[0.015em] tabular-nums [font-feature-settings:"tnum"_1]';
+const selectedControl =
+  'border-brand-orange-700 bg-brand-orange-700 text-white';
+const tableStatusStyles: Record<RestaurantTable['status'], string> = {
+  available:
+    'border-[1.5px] border-status-ready-border bg-status-ready text-status-ready-foreground',
+  occupied:
+    'border-status-occupied-border bg-status-occupied text-status-occupied-foreground',
+  reserved:
+    'border-status-reserved-border bg-status-reserved text-status-reserved-foreground',
+  cleaning:
+    'border-dashed border-status-cleaning-border bg-status-cleaning text-status-cleaning-foreground',
+};
 export const minutes = (since: number, now: number) =>
   Math.max(0, Math.floor((now - since) / 60000));
 export const duration = (since: number, now: number) => {
@@ -60,8 +76,10 @@ export function Sheet({
         if (!open) onClose();
       }}
     >
-      <DialogContent className="action-sheet">
-        <DialogTitle className="sheet-title">{title}</DialogTitle>
+      <DialogContent className="bottom-0 top-auto left-0 max-h-[calc(100dvh-max(16px,env(safe-area-inset-top)))] w-full max-w-full translate-none gap-5 overflow-y-auto overscroll-y-contain rounded-t-[22px] rounded-b-none bg-paper px-5 pt-[27px] pb-[max(25px,env(safe-area-inset-bottom))] [-webkit-overflow-scrolling:touch] min-[761px]:top-1/2 min-[761px]:left-1/2 min-[761px]:max-h-[90dvh] min-[761px]:max-w-[450px] min-[761px]:-translate-x-1/2 min-[761px]:-translate-y-1/2 min-[761px]:rounded-[20px] min-[761px]:p-7 [&_[data-slot=dialog-close]]:top-2 [&_[data-slot=dialog-close]]:right-2 [&_[data-slot=dialog-close]]:min-h-11 [&_[data-slot=dialog-close]]:min-w-11">
+        <DialogTitle className="pr-5 text-[25px] leading-[1.2] font-semibold tracking-[-0.8px]">
+          {title}
+        </DialogTitle>
         <DialogDescription>{description}</DialogDescription>
         {children}
       </DialogContent>
@@ -74,21 +92,34 @@ export function TableCard({
   reservation,
   onClick,
   t,
+  className,
 }: {
   table: RestaurantTable;
   now: number;
   reservation?: Reservation;
   onClick: () => void;
   t: Translate;
+  className?: string;
 }) {
   return (
     <button
       onClick={onClick}
-      className={`table-card ${table.status}`}
+      className={cn(
+        'flex min-h-28 min-w-0 flex-col rounded-[10px] border bg-muted px-2 py-2.5 text-left transition-transform hover:-translate-y-0.5 min-[769px]:min-h-[119px] min-[769px]:rounded-xl min-[769px]:px-3 min-[769px]:py-[13px]',
+        tableStatusStyles[table.status],
+        className,
+      )}
       aria-label={`${table.name}, ${t('party.people', { count: table.capacity })}, ${t('status.' + table.status)}`}
     >
-      <span className="table-top">
-        <b className="operational-type">{table.name}</b>
+      <span className="flex items-center justify-between [&>svg]:text-current">
+        <b
+          className={cn(
+            operationalType,
+            'text-xl font-semibold min-[769px]:text-[22px]',
+          )}
+        >
+          {table.name}
+        </b>
         {table.status === 'available' ? (
           <Check size={20} />
         ) : table.status === 'cleaning' ? (
@@ -99,18 +130,30 @@ export function TableCard({
           <Clock3 size={20} />
         )}
       </span>
-      <span className="capacity">
+      <span className="mt-[7px] flex min-w-0 items-start gap-[5px] text-base leading-[1.35] font-normal whitespace-normal text-ink-muted [overflow-wrap:anywhere]">
         <Users size={18} />
         {table.capacity} · {t('area.' + table.area)}
       </span>
-      <span className="table-status">
-        <span>{t('status.' + table.status)}</span>
+      <span className="mt-auto flex flex-wrap items-end justify-between gap-1.5 pt-3 text-base leading-[1.35] font-semibold whitespace-normal min-[769px]:pt-[15px]">
+        <span className="min-w-0 [overflow-wrap:anywhere]">
+          {t('status.' + table.status)}
+        </span>
         {table.seatedAt ? (
-          <span className="status-time operational-type">
+          <span
+            className={cn(
+              operationalType,
+              'inline-flex min-w-0 max-w-full items-center gap-1 [overflow-wrap:anywhere] [&>svg]:size-[18px]',
+            )}
+          >
             <Timer aria-hidden="true" /> {duration(table.seatedAt, now)}
           </span>
         ) : table.status === 'reserved' && reservation ? (
-          <span className="status-time operational-type">
+          <span
+            className={cn(
+              operationalType,
+              'inline-flex min-w-0 max-w-full items-center gap-1 [overflow-wrap:anywhere] [&>svg]:size-[18px]',
+            )}
+          >
             <Clock3 aria-hidden="true" /> {reservation.time}
           </span>
         ) : null}
@@ -132,47 +175,57 @@ export function QueueCard({
   t: Translate;
 }) {
   return (
-    <article className="queue-card">
+    <article className="flex min-h-[108px] items-center gap-2.5 border-b border-dashed border-border px-[13px] py-[17px] last:border-b-0 min-[769px]:min-h-[105px] min-[769px]:gap-3.5 min-[769px]:px-[18px] min-[769px]:py-5 [&>button]:px-3">
       <button
-        className="ticket operational-type"
+        className={cn(
+          operationalType,
+          'grid h-[43px] min-w-11 rotate-[-0.7deg] place-items-center rounded-sm border-0 bg-ticket text-base font-bold text-ticket-foreground shadow-[0_2px_5px_oklch(31%_0.092_12/9%)] min-[769px]:h-[46px] min-[769px]:min-w-[49px] min-[769px]:text-[17px]',
+        )}
         onClick={onDetail}
         aria-label={`${q.queueNumber} ${q.customerName || t('queue.walkin')}`}
       >
         {q.queueNumber}
       </button>
-      <div className="party-info">
-        <div className="party-heading">
-          <h3>
+      <div className="min-w-0 flex-1">
+        <div className="flex min-w-0 items-start justify-start gap-x-4 gap-y-2.5">
+          <h3 className="mb-2 min-w-0 text-lg leading-[1.3] font-semibold [overflow-wrap:anywhere]">
             {q.customerName || t('queue.walkin')}{' '}
-            <span>· {t('party.people', { count: q.partySize })}</span>
+            <span className="text-base font-normal text-ink-muted">
+              · {t('party.people', { count: q.partySize })}
+            </span>
           </h3>
           <a
-            className="party-phone"
+            className="-mt-2.5 inline-flex min-h-11 items-center gap-1.5 whitespace-nowrap text-ink-muted no-underline [&>svg]:size-5 [&>svg]:text-brand-orange-700"
             href={`tel:${q.phone.replace(/\s/g, '')}`}
             aria-label={t('detail.phone', { phone: q.phone })}
           >
             <Phone aria-hidden="true" /> {q.phone}
           </a>
         </div>
-        <p className="wait-details operational-type">
-          <span>
+        <p
+          className={cn(
+            operationalType,
+            'mt-0 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-base text-ink-muted [&_svg]:size-5 [&_svg]:text-brand-orange-700',
+          )}
+        >
+          <span className="inline-flex items-center gap-1.5 font-semibold text-foreground">
             <Clock3 aria-hidden="true" />
             {t('queue.waiting', { count: minutes(q.joinedAt, now) })}
           </span>
-          <span className="estimate">
+          <span className="inline-flex items-center gap-1.5 text-ink-muted max-[760px]:mt-[5px] max-[760px]:block max-[760px]:first-letter:text-transparent">
             {t('queue.estimate', {
               min: q.estimatedWaitMinutes || 15,
               max: (q.estimatedWaitMinutes || 15) + 5,
             })}
           </span>
         </p>
-        <span className="party-meta">
-          <span>
+        <span className="mt-2 flex flex-wrap gap-x-3 gap-y-1.5 text-base text-ink-muted max-[760px]:gap-x-2.5 max-[760px]:gap-y-[5px] [&_svg]:size-5 [&_svg]:text-brand-orange-700">
+          <span className="inline-flex items-center gap-1.5">
             {q.smoking ? <Cigarette /> : <Ban />}
             {t(q.smoking ? 'party.smoking' : 'party.nonSmoking')}
           </span>
           {q.airConditioning && (
-            <span>
+            <span className="inline-flex items-center gap-1.5">
               <Snowflake /> {t('party.airConditioned')}
             </span>
           )}
@@ -204,41 +257,68 @@ export function ReservationCard({
   t: Translate;
 }) {
   return (
-    <article className={`reservation-card ${soon ? 'soon' : ''}`}>
+    <article
+      className={cn(
+        'flex items-center gap-3.5 border-b border-border px-2.5 py-[18px] last:border-b-0 min-[761px]:px-4 min-[761px]:py-[22px]',
+        soon && 'relative bg-status-reserved',
+      )}
+    >
       <button
-        className="booking-time"
+        className={cn(
+          'min-h-12 min-w-[57px] border-0 bg-transparent p-0 text-left text-[19px] font-semibold',
+          soon && 'text-status-reserved-foreground',
+        )}
         onClick={onEdit}
         aria-label={`Edit booking for ${r.customerName} at ${r.time}`}
       >
-        <span className="booking-clock operational-type">{r.time}</span>
-        <span>{r.assignedTableId || t('booking.label')}</span>
+        <span
+          className={cn(
+            operationalType,
+            'flex items-center gap-1.5 text-[19px] font-semibold',
+          )}
+        >
+          {r.time}
+        </span>
+        <span className="mt-[5px] block text-base font-normal text-ink-muted">
+          {r.assignedTableId || t('booking.label')}
+        </span>
       </button>
-      <div className="party-info">
-        <div className="party-heading">
-          <h3>
+      <div className="min-w-0 flex-1">
+        <div className="flex min-w-0 items-start justify-start gap-x-4 gap-y-2.5">
+          <h3 className="min-w-0 text-lg font-semibold [overflow-wrap:anywhere]">
             {r.customerName}{' '}
-            <span>· {t('party.people', { count: r.partySize })}</span>
+            <span className="text-base font-normal text-ink-muted">
+              · {t('party.people', { count: r.partySize })}
+            </span>
           </h3>
           <a
-            className="party-phone"
+            className="-mt-2.5 inline-flex min-h-11 items-center gap-1.5 whitespace-nowrap text-ink-muted no-underline [&>svg]:size-5 [&>svg]:text-brand-orange-700"
             href={`tel:${r.phone.replace(/\s/g, '')}`}
             aria-label={t('detail.phone', { phone: r.phone })}
           >
             <Phone aria-hidden="true" /> {r.phone}
           </a>
         </div>
-        <p className={`reservation-status ${r.status}`}>
+        <p
+          className={cn('mt-[7px] text-base text-ink-muted', {
+            'text-status-reserved-foreground': r.status === 'upcoming',
+            'font-semibold text-status-ready-foreground':
+              r.status === 'arrived',
+            'text-brand-red-700':
+              r.status === 'cancelled' || r.status === 'no-show',
+          })}
+        >
           {r.status === 'upcoming' && soon
             ? t('booking.dueSoon')
             : t('status.' + r.status)}
         </p>
-        <span className="party-meta">
-          <span>
+        <span className="mt-2 flex flex-wrap gap-x-3 gap-y-1.5 text-base text-ink-muted [&_svg]:size-5 [&_svg]:text-brand-orange-700">
+          <span className="inline-flex items-center gap-1.5">
             {r.smoking ? <Cigarette /> : <Ban />}
             {t(r.smoking ? 'party.smoking' : 'party.nonSmoking')}
           </span>
           {r.airConditioning && (
-            <span>
+            <span className="inline-flex items-center gap-1.5">
               <Snowflake /> {t('party.airConditioned')}
             </span>
           )}
@@ -409,23 +489,38 @@ export function PartyForm({
     setStep((current) => Math.min(steps.length, current + 1));
   }
   return (
-    <form onSubmit={submit} className="party-form" noValidate>
-      <div className="form-progress" aria-label={t('form.progress')}>
-        <p id="form-progress-status" aria-live="polite">
+    <form
+      onSubmit={submit}
+      className="flex flex-col gap-5 [&_fieldset]:m-0 [&_fieldset]:border-0 [&_fieldset]:p-0 [&_label]:text-base [&_label]:font-semibold [&_legend]:text-base [&_legend]:font-semibold [&_label>span]:font-normal [&_label>span]:text-ink-muted [&_input]:mt-2 [&_input]:min-h-[47px] [&_input]:bg-paper [&_input]:text-base"
+      noValidate
+    >
+      <div className="grid gap-2.5 pb-1.5" aria-label={t('form.progress')}>
+        <p
+          id="form-progress-status"
+          className="font-semibold text-ink-muted"
+          aria-live="polite"
+        >
           {t('form.step', { current: step, total: steps.length })}
         </p>
         <progress
+          className="absolute top-0 left-0 z-4 h-1.5 w-full appearance-none overflow-hidden rounded-t-[20px] border-0 bg-muted [&::-moz-progress-bar]:bg-brand-orange-700 [&::-webkit-progress-bar]:bg-muted [&::-webkit-progress-value]:bg-brand-orange-700"
           value={step}
           max={steps.length}
           aria-labelledby="form-progress-status"
         />
-        <ol>
+        <ol className="m-0 flex list-none gap-2 p-0">
           {steps.map((label, index) => {
             const number = index + 1;
             return (
               <li
                 key={label}
-                className={number < step ? 'complete' : ''}
+                className={cn(
+                  'flex min-w-0 flex-1 flex-col items-center justify-start gap-[7px] text-center leading-[1.25] text-ink-muted [&>span]:grid [&>span]:size-7 [&>span]:shrink-0 [&>span]:place-items-center [&>span]:rounded-full [&>span]:bg-muted [&>span]:font-bold',
+                  number < step &&
+                    '[&>span]:bg-status-ready [&>span]:text-status-ready-foreground',
+                  number === step &&
+                    'font-bold text-brand-orange-800 [&>span]:bg-brand-orange-700 [&>span]:text-paper',
+                )}
                 aria-current={number === step ? 'step' : undefined}
               >
                 <span>{number}</span>
@@ -435,19 +530,20 @@ export function PartyForm({
           })}
         </ol>
       </div>
-      <div className={step !== 1 ? 'form-step-hidden' : 'form-step'}>
+      <div className={step !== 1 ? 'hidden' : 'flex flex-col gap-5'}>
         <fieldset>
           <legend>{t('form.partySize')}</legend>
-          <div className="size-options">
+          <div className="mt-3 grid grid-cols-7 gap-[5px] min-[761px]:gap-1.5">
             {[1, 2, 3, 4, 5, 6, 7].map((n) => (
               <Button
                 type="button"
                 variant="outline"
                 key={n}
                 aria-pressed={n === 7 ? large : !large && size === n}
-                className={
-                  (n === 7 ? large : !large && size === n) ? 'selected' : ''
-                }
+                className={cn(
+                  'min-h-12 p-0 text-base',
+                  (n === 7 ? large : !large && size === n) && selectedControl,
+                )}
                 onClick={() => {
                   setSize(n);
                   setLarge(n === 7);
@@ -478,7 +574,11 @@ export function PartyForm({
               required
             />
             {errors.size && (
-              <span id="party-size-error" className="field-error" role="alert">
+              <span
+                id="party-size-error"
+                className="mt-[7px] block leading-[1.4] font-semibold text-brand-red-700!"
+                role="alert"
+              >
                 {errors.size}
               </span>
             )}
@@ -501,7 +601,11 @@ export function PartyForm({
             required={booking}
           />
           {errors.name && (
-            <span id="party-name-error" className="field-error" role="alert">
+            <span
+              id="party-name-error"
+              className="mt-[7px] block leading-[1.4] font-semibold text-brand-red-700!"
+              role="alert"
+            >
               {errors.name}
             </span>
           )}
@@ -524,20 +628,27 @@ export function PartyForm({
             required
           />
           {errors.phone && (
-            <span id="party-phone-error" className="field-error" role="alert">
+            <span
+              id="party-phone-error"
+              className="mt-[7px] block leading-[1.4] font-semibold text-brand-red-700!"
+              role="alert"
+            >
               {errors.phone}
             </span>
           )}
         </label>
       </div>
-      <div className={step !== 2 ? 'form-step-hidden' : 'form-step'}>
+      <div className={step !== 2 ? 'hidden' : 'flex flex-col gap-5'}>
         <fieldset>
           <legend>{t('form.smokingQuestion')}</legend>
-          <div className="smoking-options">
+          <div className="mt-2.5 grid grid-cols-2 gap-2">
             <Button
               type="button"
               variant="outline"
-              className={!smoking ? 'selected' : ''}
+              className={cn(
+                'min-h-12 px-2 text-base',
+                !smoking && selectedControl,
+              )}
               aria-pressed={!smoking}
               onClick={() => setSmoking(false)}
             >
@@ -546,7 +657,10 @@ export function PartyForm({
             <Button
               type="button"
               variant="outline"
-              className={smoking ? 'selected' : ''}
+              className={cn(
+                'min-h-12 px-2 text-base',
+                smoking && selectedControl,
+              )}
               aria-pressed={smoking}
               onClick={() => {
                 setSmoking(true);
@@ -559,11 +673,14 @@ export function PartyForm({
         </fieldset>
         <fieldset>
           <legend>{t('form.airConditioningQuestion')}</legend>
-          <div className="preference-options">
+          <div className="mt-2.5 grid grid-cols-2 gap-2">
             <Button
               type="button"
               variant="outline"
-              className={!airConditioning ? 'selected' : ''}
+              className={cn(
+                'min-h-12 px-2 text-base',
+                !airConditioning && selectedControl,
+              )}
               aria-pressed={!airConditioning}
               onClick={() => setAirConditioning(false)}
             >
@@ -572,7 +689,10 @@ export function PartyForm({
             <Button
               type="button"
               variant="outline"
-              className={airConditioning ? 'selected' : ''}
+              className={cn(
+                'min-h-12 px-2 text-base',
+                airConditioning && selectedControl,
+              )}
               aria-pressed={airConditioning}
               onClick={() => {
                 setAirConditioning(true);
@@ -585,8 +705,8 @@ export function PartyForm({
         </fieldset>
       </div>
       {booking && (
-        <div className={step !== 3 ? 'form-step-hidden' : 'form-step'}>
-          <div className="form-row">
+        <div className={step !== 3 ? 'hidden' : 'flex flex-col gap-5'}>
+          <div className="flex gap-3 [&>*]:min-w-0 [&>*]:flex-1">
             <label htmlFor="party-date">
               {t('form.date')}
               <Input
@@ -606,7 +726,7 @@ export function PartyForm({
               {errors.date && (
                 <span
                   id="party-date-error"
-                  className="field-error"
+                  className="mt-[7px] block leading-[1.4] font-semibold text-brand-red-700!"
                   role="alert"
                 >
                   {errors.date}
@@ -631,7 +751,7 @@ export function PartyForm({
               {errors.time && (
                 <span
                   id="party-time-error"
-                  className="field-error"
+                  className="mt-[7px] block leading-[1.4] font-semibold text-brand-red-700!"
                   role="alert"
                 >
                   {errors.time}
@@ -644,13 +764,17 @@ export function PartyForm({
               {t('form.assignTable')} <span>{t('form.optional')}</span>
             </legend>
             {eligibleTables.length ? (
-              <div className="assignment-options">
+              <div className="mt-2.5 grid grid-cols-2 gap-2">
                 {eligibleTables.map((table) => (
                   <Button
                     key={table.id}
                     type="button"
                     variant="outline"
-                    className={assignedTableId === table.id ? 'selected' : ''}
+                    className={cn(
+                      'h-auto min-h-[58px] flex-col gap-0.5 [&>span]:text-base [&>span]:font-medium [&>span]:text-ink-muted',
+                      assignedTableId === table.id &&
+                        `${selectedControl} [&>span]:text-inherit`,
+                    )}
                     aria-pressed={assignedTableId === table.id}
                     onClick={() =>
                       setAssignedTableId((current) =>
@@ -666,9 +790,13 @@ export function PartyForm({
                 ))}
               </div>
             ) : (
-              <p className="form-footnote">{t('form.noSuitableTable')}</p>
+              <p className="text-center text-base leading-[1.7] text-ink-muted">
+                {t('form.noSuitableTable')}
+              </p>
             )}
-            <p className="assignment-help">{t('form.assignTableHelp')}</p>
+            <p className="mt-2 text-base leading-[1.45] text-ink-muted">
+              {t('form.assignTableHelp')}
+            </p>
           </fieldset>
           <label htmlFor="party-notes">
             {t('form.notes')} <span>{t('form.optional')}</span>
@@ -683,7 +811,7 @@ export function PartyForm({
           </label>
         </div>
       )}
-      <div className="form-actions">
+      <div className="sticky bottom-[-28px] z-2 mx-[-2px] flex items-center gap-2.5 bg-[linear-gradient(to_bottom,transparent,var(--paper)_12px)] px-0.5 pt-3 pb-0.5 [&>button]:w-0 [&>button]:flex-1">
         {step > 1 && (
           <Button
             type="button"
@@ -696,11 +824,15 @@ export function PartyForm({
           </Button>
         )}
         {step < steps.length ? (
-          <Button type="button" onClick={continueFlow} className="wide">
+          <Button
+            type="button"
+            onClick={continueFlow}
+            className="min-h-[52px] w-full text-base"
+          >
             {t('action.next')} <ArrowRight />
           </Button>
         ) : (
-          <Button type="submit" className="wide">
+          <Button type="submit" className="min-h-[52px] w-full text-base">
             {booking
               ? initial
                 ? t('form.saveBooking')
@@ -711,7 +843,9 @@ export function PartyForm({
         )}
       </div>
       {!booking && step === 2 && (
-        <p className="form-footnote">{t('form.fast')}</p>
+        <p className="text-center text-base leading-[1.7] text-ink-muted">
+          {t('form.fast')}
+        </p>
       )}
     </form>
   );
