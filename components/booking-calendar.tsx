@@ -33,7 +33,7 @@ export function BookingCalendar({
       aria-label={t('booking.weekSchedule')}
     >
       <div className="week-navigation">
-        <Button variant="ghost" onClick={onPreviousWeek}>
+        <Button variant="secondary" onClick={onPreviousWeek}>
           <ChevronLeft aria-hidden="true" />
           {t('booking.previousWeek')}
         </Button>
@@ -41,7 +41,7 @@ export function BookingCalendar({
           <b>{formatWeekRange(dates[0], language)}</b>
           <Button onClick={onToday}>{t('booking.today')}</Button>
         </div>
-        <Button variant="ghost" onClick={onNextWeek}>
+        <Button variant="secondary" onClick={onNextWeek}>
           {t('booking.nextWeek')}
           <ChevronRight aria-hidden="true" />
         </Button>

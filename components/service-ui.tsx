@@ -13,6 +13,8 @@ import {
   Timer,
   Snowflake,
   MapPin,
+  ArrowLeft,
+  ArrowRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -121,14 +123,12 @@ export function QueueCard({
   now,
   onSeat,
   onDetail,
-  fits,
   t,
 }: {
   party: QueueEntry;
   now: number;
   onSeat: () => void;
   onDetail: () => void;
-  fits: boolean;
   t: Translate;
 }) {
   return (
@@ -141,10 +141,19 @@ export function QueueCard({
         {q.queueNumber}
       </button>
       <div className="party-info">
-        <h3>
-          {q.customerName || t('queue.walkin')}{' '}
-          <span>· {t('party.people', { count: q.partySize })}</span>
-        </h3>
+        <div className="party-heading">
+          <h3>
+            {q.customerName || t('queue.walkin')}{' '}
+            <span>· {t('party.people', { count: q.partySize })}</span>
+          </h3>
+          <a
+            className="party-phone"
+            href={`tel:${q.phone.replace(/\s/g, '')}`}
+            aria-label={t('detail.phone', { phone: q.phone })}
+          >
+            <Phone aria-hidden="true" /> {q.phone}
+          </a>
+        </div>
         <p className="wait-details">
           <span>
             <Clock3 aria-hidden="true" />
@@ -162,19 +171,15 @@ export function QueueCard({
             {q.smoking ? <Cigarette /> : <Ban />}
             {t(q.smoking ? 'party.smoking' : 'party.nonSmoking')}
           </span>
-          <span>
-            <Phone /> {q.phone}
-          </span>
           {q.airConditioning && (
             <span>
               <Snowflake /> {t('party.airConditioned')}
             </span>
           )}
         </span>
-        {fits && <span className="fit-note">{t('queue.fit')}</span>}
       </div>
       <Button
-        variant="outline"
+        variant="secondary"
         onClick={onSeat}
         aria-label={`Seat ${q.queueNumber}`}
       >
@@ -206,15 +211,24 @@ export function ReservationCard({
         aria-label={`Edit booking for ${r.customerName} at ${r.time}`}
       >
         <span className="booking-clock">
-          <Clock3 aria-hidden="true" /> {r.time}
+          {r.time}
         </span>
         <span>{r.assignedTableId || t('booking.label')}</span>
       </button>
       <div className="party-info">
-        <h3>
-          {r.customerName}{' '}
-          <span>· {t('party.people', { count: r.partySize })}</span>
-        </h3>
+        <div className="party-heading">
+          <h3>
+            {r.customerName}{' '}
+            <span>· {t('party.people', { count: r.partySize })}</span>
+          </h3>
+          <a
+            className="party-phone"
+            href={`tel:${r.phone.replace(/\s/g, '')}`}
+            aria-label={t('detail.phone', { phone: r.phone })}
+          >
+            <Phone aria-hidden="true" /> {r.phone}
+          </a>
+        </div>
         <p className={`reservation-status ${r.status}`}>
           {r.status === 'upcoming' && soon
             ? t('booking.dueSoon')
@@ -225,9 +239,6 @@ export function ReservationCard({
             {r.smoking ? <Cigarette /> : <Ban />}
             {t(r.smoking ? 'party.smoking' : 'party.nonSmoking')}
           </span>
-          <span>
-            <Phone /> {r.phone}
-          </span>
           {r.airConditioning && (
             <span>
               <Snowflake /> {t('party.airConditioned')}
@@ -237,7 +248,7 @@ export function ReservationCard({
       </div>
       {r.status === 'upcoming' ? (
         <Button
-          variant="outline"
+          variant="secondary"
           onClick={onArrive}
           aria-label={`Mark ${r.customerName} arrived`}
         >
@@ -284,7 +295,13 @@ export function PartyForm({
   onSubmit: (data: PartyInput) => void;
   t: Translate;
 }) {
-  const [error, setError] = useState('');
+  const [errors, setErrors] = useState<
+    Partial<Record<'name' | 'phone' | 'size' | 'date' | 'time', string>>
+  >({});
+  const [step, setStep] = useState(1);
+  const [customerName, setCustomerName] = useState(initial?.customerName || '');
+  const [phone, setPhone] = useState(initial?.phone || '');
+  const [notes, setNotes] = useState(initial?.notes || '');
   const [size, setSize] = useState(initial?.partySize || 2);
   const [exactSize, setExactSize] = useState(
     Math.max(7, initial?.partySize || 7),
@@ -300,6 +317,10 @@ export function PartyForm({
     initial?.assignedTableId || '',
   );
   const partySize = large ? exactSize : size;
+  // Both flows share the same first two steps; bookings add scheduling last.
+  const steps = booking
+    ? [t('form.stepGuest'), t('form.stepPreferences'), t('form.stepBooking')]
+    : [t('form.stepGuest'), t('form.stepPreferences')];
   const eligibleTables = tables
     .filter(
       (table) =>
@@ -329,22 +350,21 @@ export function PartyForm({
     );
   function submit(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
-    const f = new FormData(e.currentTarget);
-    const value = (key: string, fallback = '') => {
-      const v = f.get(key);
-      return typeof v === 'string' ? v.trim() : fallback;
-    };
-    if (!value('phone') || (booking && !value('name'))) {
-      setError(t('form.required'));
+    if (!validateGuest()) {
+      setStep(1);
+      return;
+    }
+    if (booking && !validateSchedule()) {
+      setStep(3);
       return;
     }
     onSubmit({
-      customerName: value('name'),
-      phone: value('phone'),
+      customerName: customerName.trim(),
+      phone: phone.trim(),
       partySize,
       date,
       time,
-      notes: value('notes'),
+      notes: notes.trim(),
       smoking,
       airConditioning,
       assignedTableId: eligibleTables.some(
@@ -354,128 +374,220 @@ export function PartyForm({
         : undefined,
     });
   }
+  function validateGuest() {
+    const nextErrors = {
+      ...(large && (exactSize < 7 || exactSize > 30)
+        ? { size: t('form.exactSizeInvalid') }
+        : {}),
+      ...(booking && !customerName.trim()
+        ? { name: t('form.nameRequired') }
+        : {}),
+      ...(!phone.trim() ? { phone: t('form.phoneRequired') } : {}),
+    };
+    setErrors((current) => ({
+      ...current,
+      size: nextErrors.size,
+      name: nextErrors.name,
+      phone: nextErrors.phone,
+    }));
+    return Object.keys(nextErrors).length === 0;
+  }
+  function validateSchedule() {
+    const nextErrors = {
+      ...(!date ? { date: t('form.dateRequired') } : {}),
+      ...(!time ? { time: t('form.timeRequired') } : {}),
+    };
+    setErrors((current) => ({
+      ...current,
+      date: nextErrors.date,
+      time: nextErrors.time,
+    }));
+    return Object.keys(nextErrors).length === 0;
+  }
+  function continueFlow() {
+    if (step === 1 && !validateGuest()) {
+      return;
+    }
+    setStep((current) => Math.min(steps.length, current + 1));
+  }
   return (
-    <form onSubmit={submit} className="party-form">
-      {error && (
-        <p role="alert" className="form-error">
-          {error}
+    <form onSubmit={submit} className="party-form" noValidate>
+      <div className="form-progress" aria-label={t('form.progress')}>
+        <p id="form-progress-status" aria-live="polite">
+          {t('form.step', { current: step, total: steps.length })}
         </p>
-      )}
-      <fieldset>
-        <legend>{t('form.partySize')}</legend>
-        <div className="size-options">
-          {[1, 2, 3, 4, 5, 6, 7].map((n) => (
+        <progress
+          value={step}
+          max={steps.length}
+          aria-labelledby="form-progress-status"
+        />
+        <ol>
+          {steps.map((label, index) => {
+            const number = index + 1;
+            return (
+              <li
+                key={label}
+                className={number < step ? 'complete' : ''}
+                aria-current={number === step ? 'step' : undefined}
+              >
+                <span>{number}</span>
+                {label}
+              </li>
+            );
+          })}
+        </ol>
+      </div>
+      <div className={step !== 1 ? 'form-step-hidden' : 'form-step'}>
+        <fieldset>
+          <legend>{t('form.partySize')}</legend>
+          <div className="size-options">
+            {[1, 2, 3, 4, 5, 6, 7].map((n) => (
+              <Button
+                type="button"
+                variant="outline"
+                key={n}
+                aria-pressed={n === 7 ? large : !large && size === n}
+                className={
+                  (n === 7 ? large : !large && size === n) ? 'selected' : ''
+                }
+                onClick={() => {
+                  setSize(n);
+                  setLarge(n === 7);
+                }}
+              >
+                {n === 7 ? '7+' : n}
+              </Button>
+            ))}
+          </div>
+        </fieldset>
+        {large && (
+          <label htmlFor="party-size">
+            {t('form.exactSize')}
+            <Input
+              id="party-size"
+              name="size"
+              aria-label={t('form.exactSize')}
+              type="number"
+              min="7"
+              max="30"
+              value={exactSize}
+              aria-invalid={Boolean(errors.size)}
+              aria-describedby={errors.size ? 'party-size-error' : undefined}
+              onChange={(event) => {
+                setExactSize(Number(event.target.value));
+                setErrors((current) => ({ ...current, size: undefined }));
+              }}
+              required
+            />
+            {errors.size && (
+              <span id="party-size-error" className="field-error" role="alert">
+                {errors.size}
+              </span>
+            )}
+          </label>
+        )}
+        <label htmlFor="party-name">
+          {t('form.name')}
+          <Input
+            id="party-name"
+            name="name"
+            placeholder={t('form.nameHint')}
+            value={customerName}
+            aria-invalid={Boolean(errors.name)}
+            aria-describedby={errors.name ? 'party-name-error' : undefined}
+            onChange={(event) => {
+              setCustomerName(event.target.value);
+              setErrors((current) => ({ ...current, name: undefined }));
+            }}
+            maxLength={60}
+            required={booking}
+          />
+          {errors.name && (
+            <span id="party-name-error" className="field-error" role="alert">
+              {errors.name}
+            </span>
+          )}
+        </label>
+        <label htmlFor="party-phone">
+          {t('form.phone')}
+          <Input
+            id="party-phone"
+            name="phone"
+            type="tel"
+            placeholder={t('form.phoneHint')}
+            value={phone}
+            aria-invalid={Boolean(errors.phone)}
+            aria-describedby={errors.phone ? 'party-phone-error' : undefined}
+            onChange={(event) => {
+              setPhone(event.target.value);
+              setErrors((current) => ({ ...current, phone: undefined }));
+            }}
+            maxLength={24}
+            required
+          />
+          {errors.phone && (
+            <span id="party-phone-error" className="field-error" role="alert">
+              {errors.phone}
+            </span>
+          )}
+        </label>
+      </div>
+      <div className={step !== 2 ? 'form-step-hidden' : 'form-step'}>
+        <fieldset>
+          <legend>{t('form.smokingQuestion')}</legend>
+          <div className="smoking-options">
             <Button
               type="button"
               variant="outline"
-              key={n}
-              aria-pressed={n === 7 ? large : !large && size === n}
-              className={
-                (n === 7 ? large : !large && size === n) ? 'selected' : ''
-              }
+              className={!smoking ? 'selected' : ''}
+              aria-pressed={!smoking}
+              onClick={() => setSmoking(false)}
+            >
+              <Ban /> {t('form.no')}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className={smoking ? 'selected' : ''}
+              aria-pressed={smoking}
               onClick={() => {
-                setSize(n);
-                setLarge(n === 7);
+                setSmoking(true);
+                setAirConditioning(false);
               }}
             >
-              {n === 7 ? '7+' : n}
+              <Cigarette /> {t('form.yes')}
             </Button>
-          ))}
-        </div>
-      </fieldset>
-      {large && (
-        <label htmlFor="party-size">
-          {t('form.exactSize')}
-          <Input
-            id="party-size"
-            name="size"
-            aria-label={t('form.exactSize')}
-            type="number"
-            min="7"
-            max="30"
-            defaultValue={Math.max(7, size)}
-            onChange={(event) => setExactSize(Number(event.target.value))}
-            required
-          />
-        </label>
-      )}
-      <label htmlFor="party-name">
-        {t('form.name')}
-        <Input
-          id="party-name"
-          name="name"
-          placeholder={t('form.nameHint')}
-          defaultValue={initial?.customerName}
-          maxLength={60}
-          required={booking}
-        />
-      </label>
-      <label htmlFor="party-phone">
-        {t('form.phone')}
-        <Input
-          id="party-phone"
-          name="phone"
-          type="tel"
-          placeholder={t('form.phoneHint')}
-          defaultValue={initial?.phone}
-          maxLength={24}
-          required
-        />
-      </label>
-      <fieldset>
-        <legend>{t('form.smokingQuestion')}</legend>
-        <div className="smoking-options">
-          <Button
-            type="button"
-            variant="outline"
-            className={!smoking ? 'selected' : ''}
-            aria-pressed={!smoking}
-            onClick={() => setSmoking(false)}
-          >
-            <Ban /> {t('form.no')}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            className={smoking ? 'selected' : ''}
-            aria-pressed={smoking}
-            onClick={() => {
-              setSmoking(true);
-              setAirConditioning(false);
-            }}
-          >
-            <Cigarette /> {t('form.yes')}
-          </Button>
-        </div>
-      </fieldset>
-      <fieldset>
-        <legend>{t('form.airConditioningQuestion')}</legend>
-        <div className="preference-options">
-          <Button
-            type="button"
-            variant="outline"
-            className={!airConditioning ? 'selected' : ''}
-            aria-pressed={!airConditioning}
-            onClick={() => setAirConditioning(false)}
-          >
-            <MapPin /> {t('form.noPreference')}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            className={airConditioning ? 'selected' : ''}
-            aria-pressed={airConditioning}
-            onClick={() => {
-              setAirConditioning(true);
-              setSmoking(false);
-            }}
-          >
-            <Snowflake /> {t('form.airConditioned')}
-          </Button>
-        </div>
-      </fieldset>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>{t('form.airConditioningQuestion')}</legend>
+          <div className="preference-options">
+            <Button
+              type="button"
+              variant="outline"
+              className={!airConditioning ? 'selected' : ''}
+              aria-pressed={!airConditioning}
+              onClick={() => setAirConditioning(false)}
+            >
+              <MapPin /> {t('form.noPreference')}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className={airConditioning ? 'selected' : ''}
+              aria-pressed={airConditioning}
+              onClick={() => {
+                setAirConditioning(true);
+                setSmoking(false);
+              }}
+            >
+              <Snowflake /> {t('form.airConditioned')}
+            </Button>
+          </div>
+        </fieldset>
+      </div>
       {booking && (
-        <>
+        <div className={step !== 3 ? 'form-step-hidden' : 'form-step'}>
           <div className="form-row">
             <label htmlFor="party-date">
               {t('form.date')}
@@ -484,10 +596,24 @@ export function PartyForm({
                 name="date"
                 type="date"
                 value={date}
-                onChange={(event) => setDate(event.target.value)}
+                aria-invalid={Boolean(errors.date)}
+                aria-describedby={errors.date ? 'party-date-error' : undefined}
+                onChange={(event) => {
+                  setDate(event.target.value);
+                  setErrors((current) => ({ ...current, date: undefined }));
+                }}
                 min={SERVICE_DATE}
                 required
               />
+              {errors.date && (
+                <span
+                  id="party-date-error"
+                  className="field-error"
+                  role="alert"
+                >
+                  {errors.date}
+                </span>
+              )}
             </label>
             <label htmlFor="party-time">
               {t('form.time')}
@@ -496,9 +622,23 @@ export function PartyForm({
                 name="time"
                 type="time"
                 value={time}
-                onChange={(event) => setTime(event.target.value)}
+                aria-invalid={Boolean(errors.time)}
+                aria-describedby={errors.time ? 'party-time-error' : undefined}
+                onChange={(event) => {
+                  setTime(event.target.value);
+                  setErrors((current) => ({ ...current, time: undefined }));
+                }}
                 required
               />
+              {errors.time && (
+                <span
+                  id="party-time-error"
+                  className="field-error"
+                  role="alert"
+                >
+                  {errors.time}
+                </span>
+              )}
             </label>
           </div>
           <fieldset>
@@ -538,21 +678,43 @@ export function PartyForm({
               id="party-notes"
               name="notes"
               placeholder={t('form.notesHint')}
-              defaultValue={initial?.notes}
+              value={notes}
+              onChange={(event) => setNotes(event.target.value)}
               maxLength={160}
             />
           </label>
-        </>
+        </div>
       )}
-      <Button type="submit" className="wide">
-        {booking
-          ? initial
-            ? t('form.saveBooking')
-            : t('form.createBooking')
-          : t('form.addQueue')}{' '}
-        <ArrowUpRight />
-      </Button>
-      {!booking && <p className="form-footnote">{t('form.fast')}</p>}
+      <div className="form-actions">
+        {step > 1 && (
+          <Button
+            type="button"
+            variant="quaternary"
+            onClick={() => {
+              setStep((current) => Math.max(1, current - 1));
+            }}
+          >
+            <ArrowLeft /> {t('action.back')}
+          </Button>
+        )}
+        {step < steps.length ? (
+          <Button type="button" onClick={continueFlow} className="wide">
+            {t('action.next')} <ArrowRight />
+          </Button>
+        ) : (
+          <Button type="submit" className="wide">
+            {booking
+              ? initial
+                ? t('form.saveBooking')
+                : t('form.createBooking')
+              : t('form.addQueue')}{' '}
+            <ArrowUpRight />
+          </Button>
+        )}
+      </div>
+      {!booking && step === 2 && (
+        <p className="form-footnote">{t('form.fast')}</p>
+      )}
     </form>
   );
 }

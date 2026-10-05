@@ -43,8 +43,10 @@ import {
   type PartyInput,
 } from '@/components/service-ui';
 import { BookingCalendar } from '@/components/booking-calendar';
+import { SectionHeading } from '@/components/section-heading';
 import {
   TableOverview,
+  TableGroupingSwitch,
   type TableFilter,
   type TableGrouping,
 } from '@/components/table-overview';
@@ -336,6 +338,10 @@ export default function Home() {
           <strong className="brand-title">新志興訂位簿</strong>
         </div>
         <div className="header-actions">
+          <span className="service-pill">
+            <i /> {t('service.open')}
+          </span>
+
           <div
             className="header-clock"
             aria-label={`${t('service.hkTime')}: ${clock}`}
@@ -346,6 +352,7 @@ export default function Home() {
               <b>{clock}</b>
             </span>
           </div>
+
           <div className="language-switch" aria-label="Language / 語言 / 语言">
             {(
               [
@@ -363,28 +370,26 @@ export default function Home() {
               </button>
             ))}
           </div>
-          <span className="service-pill">
-            <i /> {t('service.open')}
-          </span>
         </div>
       </header>
       <main aria-busy={!hydrated}>
         <div className="page-heading">
-          <div>
-            <p className="service-date">
-              {view === 'Bookings'
-                ? formatServiceDate(selectedBookingDate, language, {
-                    weekday: 'long',
-                    day: 'numeric',
-                    month: 'long',
-                  })
-                : t('date.service')}
-            </p>
-            <h1>
-              {t('nav.' + view.toLowerCase())}
-              <span>.</span>
-            </h1>
-          </div>
+          <h1>
+            {t('nav.' + view.toLowerCase())}
+            <span>.</span>
+          </h1>
+          
+          <p className="service-date">
+            {formatServiceDate(
+              view === 'Bookings' ? selectedBookingDate : SERVICE_DATE,
+              language,
+              {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long',
+              },
+            )}
+          </p>
         </div>
         {storageIssue && (
           <output className="storage-warning">{t('storage.warning')}</output>
@@ -393,14 +398,19 @@ export default function Home() {
           <div className="workspace">
             <div className="left-column">
               <section className="table-section">
-                <div className="section-heading">
-                  <h2>
-                    {t('tables.title')} <span>{state.tables.length}</span>
-                  </h2>
-                  <span className="ready-count">
-                    {t('tables.ready', { count: ready.length })}
-                  </span>
-                </div>
+                <SectionHeading
+                  heading={t('tables.title')}
+                  context={
+                    <>
+                      <span>
+                        {t('tables.inGroup', { count: state.tables.length })}
+                      </span>
+                      <span className="ready-count">
+                        {t('tables.ready', { count: ready.length })}
+                      </span>
+                    </>
+                  }
+                />
                 {tableGrid}
                 <p className="table-hint">{t('tables.tap')}</p>
                 {nextBooking && (
@@ -436,22 +446,25 @@ export default function Home() {
                   </button>
                 )}
               </section>
-              <section className="tonight-bookings">
-                <div className="section-heading">
-                  <h2>
-                    {t('booking.coming')} <span>{reservations.length}</span>
-                  </h2>
-                  <Button
-                    variant="ghost"
-                    onClick={() => setView('Bookings')}
-                    className="text-action"
-                  >
-                    {t('booking.all')} <ArrowRight />
-                  </Button>
-                </div>
+              <section className="tonight-bookings booking-surface">
+                <SectionHeading
+                  heading={t('booking.coming')}
+                  context={t('booking.dayCount', {
+                    count: reservations.length,
+                  })}
+                  action={
+                    <Button
+                      variant="tertiary"
+                      onClick={() => setView('Bookings')}
+                      className="text-action"
+                    >
+                      {t('booking.all')} <ArrowRight />
+                    </Button>
+                  }
+                />
                 {reservations.length ? (
                   <>
-                    <div className="booking-list">
+                    <div className="booking-list operational-surface">
                       {reservations.map(bookingCard)}
                     </div>
                     <p className="table-hint">
@@ -472,29 +485,23 @@ export default function Home() {
               </div>
             </div>
             <section className="queue-section">
-              <div className="section-heading">
-                <h2>{t('queue.groupsWaiting', { count: waiting.length })}</h2>
-                <Button onClick={() => setModal({ type: 'walk-in' })}>
-                  <Plus /> {t('queue.walkin')}
-                </Button>
-              </div>
+              <SectionHeading
+                heading={t('queue.title')}
+                context={t('queue.groups', { count: waiting.length })}
+                action={
+                  <Button onClick={() => setModal({ type: 'walk-in' })}>
+                    <Plus /> {t('queue.walkin')}
+                  </Button>
+                }
+              />
               {waiting.length ? (
                 <>
-                  <div className="queue-list">
+                  <div className="queue-list operational-surface">
                     {waiting.map((q) => (
                       <QueueCard
                         key={q.id}
                         party={q}
                         now={now}
-                        fits={
-                          suitableTables(
-                            state,
-                            q.partySize,
-                            undefined,
-                            q.smoking,
-                            q.airConditioning,
-                          ).length > 0
-                        }
                         onSeat={() =>
                           setModal({ type: 'seat', id: q.id, kind: 'queue' })
                         }
@@ -517,13 +524,6 @@ export default function Home() {
                   </Button>
                 </div>
               )}
-              <Button
-                className="add-another"
-                variant="ghost"
-                onClick={() => setModal({ type: 'walk-in' })}
-              >
-                <Plus /> {t('queue.addAnother')}
-              </Button>
             </section>
           </div>
         ) : view === 'Bookings' ? (
@@ -551,36 +551,32 @@ export default function Home() {
               }}
               t={t}
             />
-            <div className="booking-day">
-              <div className="section-heading booking-day-heading">
-                <div>
-                  <p className="booking-date">
-                    {formatServiceDate(selectedBookingDate, language, {
-                      weekday: 'long',
-                      day: 'numeric',
-                      month: 'long',
-                    })}
-                  </p>
-                  <h2>
-                    {t('booking.dayCount', {
-                      count: state.reservations.filter(
-                        (reservation) =>
-                          reservation.date === selectedBookingDate,
-                      ).length,
-                    })}
-                  </h2>
-                </div>
-                <Button
-                  onClick={() =>
-                    setModal({
-                      type: 'booking',
-                      date: selectedBookingDate,
-                    })
-                  }
-                >
-                  <Plus /> {t('booking.add')}
-                </Button>
-              </div>
+            <div className="booking-day booking-surface operational-surface">
+              <SectionHeading
+                className="booking-day-heading"
+                heading={formatServiceDate(selectedBookingDate, language, {
+                  weekday: 'long',
+                  day: 'numeric',
+                  month: 'long',
+                })}
+                context={t('booking.dayCount', {
+                  count: state.reservations.filter(
+                    (reservation) => reservation.date === selectedBookingDate,
+                  ).length,
+                })}
+                action={
+                  <Button
+                    onClick={() =>
+                      setModal({
+                        type: 'booking',
+                        date: selectedBookingDate,
+                      })
+                    }
+                  >
+                    <Plus /> {t('booking.add')}
+                  </Button>
+                }
+              />
               <div className="booking-list">
                 {state.reservations
                   .filter(
@@ -603,19 +599,27 @@ export default function Home() {
           </section>
         ) : (
           <section className="secondary-view tables-view">
-            <div className="section-heading">
-              <h2>{t('tables.every')}</h2>
-              <span className="ready-count">
-                {t('tables.ready', { count: ready.length })}
-              </span>
-            </div>
+            <SectionHeading
+              heading={t('tables.every')}
+              context={
+                <span className="ready-count">
+                  {t('tables.ready', { count: ready.length })}
+                </span>
+              }
+              switcher={
+                <TableGroupingSwitch
+                  grouping={tableGrouping}
+                  onGroupingChange={setTableGrouping}
+                  t={t}
+                />
+              }
+            />
             <TableOverview
               tables={state.tables}
               reservations={state.reservations}
               now={now}
               grouping={tableGrouping}
               statusFilter={tableFilter}
-              onGroupingChange={setTableGrouping}
               onStatusFilterChange={setTableFilter}
               onOpenTable={(id) => setModal({ type: 'table', id })}
               t={t}
@@ -635,7 +639,7 @@ export default function Home() {
               <small>{t('demo.help')}</small>
             </div>
             <Button
-              variant="ghost"
+              variant="quinary"
               className="reset-button"
               onClick={() => setModal({ type: 'reset' })}
             >
@@ -765,7 +769,7 @@ export default function Home() {
             </div>
           )}
           <Button
-            variant="outline"
+            variant="tertiary"
             className="wide"
             onClick={() => setModal(null)}
           >
@@ -893,7 +897,7 @@ export default function Home() {
                 </Button>
               )}
               <Button
-                variant="outline"
+                variant="tertiary"
                 onClick={() =>
                   setModal({ type: 'booking', id: tableBooking.id })
                 }
@@ -936,7 +940,7 @@ export default function Home() {
                 </div>
               )}
               <Button
-                variant="outline"
+                variant="tertiary"
                 onClick={() =>
                   commit(
                     {
@@ -990,7 +994,7 @@ export default function Home() {
           </Button>
           <div className="form-row">
             <Button
-              variant="outline"
+              variant="tertiary"
               onClick={() =>
                 commit(
                   {
@@ -1006,7 +1010,7 @@ export default function Home() {
               {t('action.noShow')}
             </Button>
             <Button
-              variant="outline"
+              variant="tertiary"
               onClick={() =>
                 commit(
                   {
@@ -1098,7 +1102,7 @@ export default function Home() {
               {editBooking && (
                 <div className="form-row">
                   <Button
-                    variant="outline"
+                    variant="tertiary"
                     onClick={() => changeBooking(editBooking.id, 'no-show')}
                   >
                     {t('action.noShow')}
@@ -1147,7 +1151,7 @@ export default function Home() {
             {t('action.reset')}
           </Button>
           <Button
-            variant="outline"
+            variant="tertiary"
             className="wide"
             onClick={() => setModal(null)}
           >
