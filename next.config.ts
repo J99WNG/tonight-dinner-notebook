@@ -6,7 +6,6 @@ const githubPagesPrefix = process.env.GITHUB_ACTIONS
 
 const nextConfig: NextConfig = {
   output: 'export',
-  basePath: githubPagesPrefix,
   assetPrefix: githubPagesPrefix,
 };
 
