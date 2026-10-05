@@ -8,6 +8,7 @@ This note explains the small set of rules that keeps the prototype consistent. T
 - Orange is the action color. Red is reserved for the logo and destructive or attention states.
 - Status surfaces use low chroma and high lightness to reduce visual noise. Each status also has a text label and icon, so meaning never depends on color alone.
 - Interface text does not go below `--type-min` (`1rem`, or 16px at the default browser size). Shared buttons, dialogs, and inputs use `text-base` so component variants cannot bypass that floor.
+- Time, dates, durations, queue identifiers, and other compact operational values use the shared `operational-type` treatment. It pairs tabular numerals with a language-aware system stack: the platform mono face for Latin glyphs and locale-appropriate CJK fallbacks for English, Traditional Chinese, and Simplified Chinese.
 - Interactive targets are at least 44px high and use the same visible keyboard focus ring.
 - Queue numbers use a soft pink paper token to match the handwritten tickets guests receive in the restaurant. The number remains dark enough to meet text contrast requirements.
 

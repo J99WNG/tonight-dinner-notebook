@@ -106,7 +106,7 @@ export function TableOverview({
                 onClick={() => onStatusFilterChange(filter)}
               >
                 {label}
-                <span className="filter-count">{count}</span>
+                <span className="filter-count operational-type">{count}</span>
               </Button>
             );
           })}

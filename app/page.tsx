@@ -343,7 +343,7 @@ export default function Home() {
           </span>
 
           <div
-            className="header-clock"
+            className="header-clock operational-type"
             aria-label={`${t('service.hkTime')}: ${clock}`}
           >
             <Clock3 aria-hidden="true" />
@@ -378,8 +378,8 @@ export default function Home() {
             {t('nav.' + view.toLowerCase())}
             <span>.</span>
           </h1>
-          
-          <p className="service-date">
+
+          <p className="service-date operational-type">
             {formatServiceDate(
               view === 'Bookings' ? selectedBookingDate : SERVICE_DATE,
               language,
@@ -405,7 +405,7 @@ export default function Home() {
                       <span>
                         {t('tables.inGroup', { count: state.tables.length })}
                       </span>
-                      <span className="ready-count">
+                      <span className="ready-count operational-type">
                         {t('tables.ready', { count: ready.length })}
                       </span>
                     </>
@@ -415,7 +415,7 @@ export default function Home() {
                 <p className="table-hint">{t('tables.tap')}</p>
                 {nextBooking && (
                   <button
-                    className="booking-reminder"
+                    className="booking-reminder operational-type"
                     onClick={() =>
                       setModal(
                         nextBooking.status === 'arrived'
@@ -602,7 +602,7 @@ export default function Home() {
             <SectionHeading
               heading={t('tables.every')}
               context={
-                <span className="ready-count">
+                <span className="ready-count operational-type">
                   {t('tables.ready', { count: ready.length })}
                 </span>
               }
@@ -739,7 +739,9 @@ export default function Home() {
                       );
                     }}
                   >
-                    <span className="choice-number">{choice.name}</span>
+                    <span className="choice-number operational-type">
+                      {choice.name}
+                    </span>
                     <span>
                       <b>
                         {choice.capacity} · {t('area.' + choice.area)}
@@ -793,7 +795,7 @@ export default function Home() {
                     count: tableParty?.partySize || table.capacity,
                   })}
                 </h3>
-                <p className="detail-line">
+                <p className="detail-line operational-type">
                   <Timer aria-hidden="true" />
                   {t('detail.seatedFor', {
                     duration: duration(table.seatedAt || now, now),
@@ -870,7 +872,7 @@ export default function Home() {
                   {tableBooking.customerName} ·{' '}
                   {t('party.people', { count: tableBooking.partySize })}
                 </h3>
-                <p>
+                <p className="operational-type">
                   {tableBooking.time} ·{' '}
                   {tableBooking.status === 'arrived'
                     ? t('action.arrived')
@@ -919,10 +921,12 @@ export default function Home() {
                           setModal({ type: 'seat', id: q.id, kind: 'queue' })
                         }
                       >
-                        <span className="ticket">{q.queueNumber}</span>
+                        <span className="ticket operational-type">
+                          {q.queueNumber}
+                        </span>
                         <span>
                           <b>{q.customerName || t('queue.walkin')}</b>
-                          <small>
+                          <small className="operational-type">
                             {t('party.people', { count: q.partySize })} ·{' '}
                             {t('queue.waiting', {
                               count: minutes(q.joinedAt, now),

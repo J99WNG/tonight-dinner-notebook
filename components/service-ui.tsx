@@ -88,7 +88,7 @@ export function TableCard({
       aria-label={`${table.name}, ${t('party.people', { count: table.capacity })}, ${t('status.' + table.status)}`}
     >
       <span className="table-top">
-        <b>{table.name}</b>
+        <b className="operational-type">{table.name}</b>
         {table.status === 'available' ? (
           <Check size={20} />
         ) : table.status === 'cleaning' ? (
@@ -106,11 +106,11 @@ export function TableCard({
       <span className="table-status">
         <span>{t('status.' + table.status)}</span>
         {table.seatedAt ? (
-          <span className="status-time">
+          <span className="status-time operational-type">
             <Timer aria-hidden="true" /> {duration(table.seatedAt, now)}
           </span>
         ) : table.status === 'reserved' && reservation ? (
-          <span className="status-time">
+          <span className="status-time operational-type">
             <Clock3 aria-hidden="true" /> {reservation.time}
           </span>
         ) : null}
@@ -134,7 +134,7 @@ export function QueueCard({
   return (
     <article className="queue-card">
       <button
-        className="ticket"
+        className="ticket operational-type"
         onClick={onDetail}
         aria-label={`${q.queueNumber} ${q.customerName || t('queue.walkin')}`}
       >
@@ -154,7 +154,7 @@ export function QueueCard({
             <Phone aria-hidden="true" /> {q.phone}
           </a>
         </div>
-        <p className="wait-details">
+        <p className="wait-details operational-type">
           <span>
             <Clock3 aria-hidden="true" />
             {t('queue.waiting', { count: minutes(q.joinedAt, now) })}
@@ -210,9 +210,7 @@ export function ReservationCard({
         onClick={onEdit}
         aria-label={`Edit booking for ${r.customerName} at ${r.time}`}
       >
-        <span className="booking-clock">
-          {r.time}
-        </span>
+        <span className="booking-clock operational-type">{r.time}</span>
         <span>{r.assignedTableId || t('booking.label')}</span>
       </button>
       <div className="party-info">

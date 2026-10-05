@@ -1,11 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 
-const githubPagesOrigin =
-  'https://j99wng.github.io/tonight-dinner-notebook-pages';
-const sitesOrigin = 'https://tonight-dinner-notebook.j99wng.chatgpt.site';
-const publicOrigin =
-  process.env.GITHUB_PAGES === 'true' ? githubPagesOrigin : sitesOrigin;
+const publicOrigin = 'https://j99wng.github.io/tonight-dinner-notebook';
 
 export const metadata: Metadata = {
   metadataBase: new URL(publicOrigin),

@@ -38,7 +38,9 @@ export function BookingCalendar({
           {t('booking.previousWeek')}
         </Button>
         <div className="week-navigation-center">
-          <b>{formatWeekRange(dates[0], language)}</b>
+          <b className="operational-type">
+            {formatWeekRange(dates[0], language)}
+          </b>
           <Button onClick={onToday}>{t('booking.today')}</Button>
         </div>
         <Button variant="secondary" onClick={onNextWeek}>
@@ -60,7 +62,9 @@ export function BookingCalendar({
           return (
             <button
               key={date}
-              className={selectedDate === date ? 'selected' : ''}
+              className={`operational-type ${
+                selectedDate === date ? 'selected' : ''
+              }`.trim()}
               aria-pressed={selectedDate === date}
               aria-label={`${fullDate}, ${t('booking.dayCount', { count })}`}
               onClick={() => onSelectDate(date)}

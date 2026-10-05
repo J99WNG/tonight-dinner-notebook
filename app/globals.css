@@ -21,6 +21,7 @@
   --color-input: var(--neutral-300);
   --color-ring: var(--orange-600);
   --font-sans: Arial, Helvetica, sans-serif;
+  --font-mono: var(--font-operational);
   --radius-lg: 12px;
 }
 :root {
@@ -66,11 +67,33 @@
   --ticket-pink-ink: oklch(31% 0.092 12);
   /* Product guardrail: operational text never drops below 16px. */
   --type-min: 1rem;
+  /*
+   * Operational type keeps changing numbers steady. Latin glyphs come from
+   * the platform mono face; CJK glyphs fall through to locale-appropriate
+   * system faces instead of relying on a Latin-only web font.
+   */
+  --font-operational:
+    ui-monospace, 'SFMono-Regular', 'SF Mono', Menlo, Consolas,
+    'Liberation Mono', 'Noto Sans Mono CJK HK', 'Noto Sans Mono CJK TC',
+    'Noto Sans Mono CJK SC', 'PingFang HK', 'PingFang TC', 'PingFang SC',
+    'Microsoft JhengHei', 'Microsoft YaHei', monospace;
   --background: var(--orange-50);
   --foreground: var(--aubergine);
   --card: var(--paper);
   --primary: var(--orange-700);
   --border: var(--neutral-200);
+}
+:root:lang(zh-HK) {
+  --font-operational:
+    ui-monospace, 'SFMono-Regular', 'SF Mono', Menlo, Consolas,
+    'Liberation Mono', 'Noto Sans Mono CJK HK', 'Noto Sans Mono CJK TC',
+    'PingFang HK', 'PingFang TC', 'Microsoft JhengHei', monospace;
+}
+:root:lang(zh-CN) {
+  --font-operational:
+    ui-monospace, 'SFMono-Regular', 'SF Mono', Menlo, Consolas,
+    'Liberation Mono', 'Noto Sans Mono CJK SC', 'PingFang SC',
+    'Microsoft YaHei', monospace;
 }
 * {
   box-sizing: border-box;
@@ -120,6 +143,12 @@ p {
 }
 small {
   font-size: var(--type-min);
+}
+.operational-type {
+  font-family: var(--font-operational);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+  letter-spacing: 0.015em;
 }
 .app {
   max-width: 1240px;
@@ -189,8 +218,8 @@ h1 {
   font-weight: 600;
   line-height: 1.2;
   margin: 8px 0;
-}∂
-h1 span {
+}
+∂ h1 span {
   color: var(--orange-600);
 }
 .workspace {
@@ -374,7 +403,6 @@ h2 span {
   min-width: 0;
   max-width: 100%;
   overflow-wrap: anywhere;
-  font-variant-numeric: tabular-nums;
 }
 .status-time svg {
   width: 18px;
@@ -413,7 +441,6 @@ h2 span {
   border-radius: 0.25rem;
   box-shadow: 0 2px 5px oklch(31% 0.092 12 / 9%);
   transform: rotate(-0.7deg);
-  font-variant-numeric: tabular-nums;
 }
 .party-info {
   flex: 1;
@@ -891,7 +918,6 @@ h2 span {
   border-radius: 999px;
   background: oklch(100% 0 0 / 72%);
   color: currentColor;
-  font-variant-numeric: tabular-nums;
   font-weight: 700;
 }
 .selected[data-slot='button'] {
@@ -1140,6 +1166,13 @@ h2 span {
   min-height: 47px;
   font-size: 16px;
   background: var(--paper);
+}
+.party-form input[type='date'],
+.party-form input[type='time'] {
+  font-family: var(--font-operational);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+  letter-spacing: 0.015em;
 }
 .size-options {
   display: grid;
@@ -1445,7 +1478,6 @@ h2 span {
 .header-clock b {
   font-size: 22px;
   line-height: 1.1;
-  font-variant-numeric: tabular-nums;
 }
 .language-switch {
   display: flex;

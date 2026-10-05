@@ -16,9 +16,9 @@ npm run build
 
 The generated React/TypeScript Sites starter uses Vinext on Vite and Tailwind CSS. The build exports static files to `dist/client`; no application server, accounts, API, or database is required. The three destinations are local views within one page.
 
-## Temporary hosting
+## Hosting
 
-The private source repository cannot use GitHub Pages on the current account plan. A separate public repository, `tonight-dinner-notebook-pages`, contains only the compiled static output. Build that artifact with `GITHUB_PAGES=true npm run build`; local development and the existing Sites project continue to use `/`.
+The public source repository deploys to GitHub Pages from `main` using GitHub Actions. The production site is available at <https://j99wng.github.io/tonight-dinner-notebook/>.
 
 ## Branch workflow
 
