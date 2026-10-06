@@ -7,10 +7,18 @@ This note explains the small set of rules that keeps the prototype consistent. T
 - Brand and status colors are OKLCH custom properties exposed as Tailwind theme colors in `app/globals.css`.
 - Orange is the action color. Red is reserved for the logo and destructive or attention states.
 - Status surfaces use low chroma and high lightness to reduce visual noise. Each status also has a text label and icon, so meaning never depends on color alone.
-- Interface text does not go below Tailwind's `text-base` (`1rem`, or 16px at the default browser size). Shared buttons, dialogs, and inputs use the same utility so component variants cannot bypass that floor.
+- General page text inherits Tailwind's `text-sm`; operational values, controls, dialogs, and inputs use `text-base` to preserve scanning and touch-task readability.
 - Time, dates, durations, queue identifiers, and other compact operational values use the shared `font-mono`, `tabular-nums`, and tracking utilities. The theme font pairs the platform mono face for Latin glyphs with locale-appropriate CJK fallbacks for English, Traditional Chinese, and Simplified Chinese.
 - Interactive targets are at least 44px high and use the same visible keyboard focus ring.
 - Queue numbers use a soft pink paper token to match the handwritten tickets guests receive in the restaurant. The number remains dark enough to meet text contrast requirements.
+
+## Sizing conventions
+
+- Use Tailwind's built-in spacing, sizing, radius, typography, shadow, and breakpoint scales before introducing a custom value.
+- `md` is the shared compact-to-dashboard breakpoint. Components must not introduce nearby one-off breakpoints.
+- Use `min-h-11` for the minimum interactive target and `min-h-12` for prominent form and workflow controls.
+- Arbitrary variants are acceptable for structural selectors and browser pseudo-elements; arbitrary pixel, rem, and em sizing utilities are not.
+- When an exact brand or semantic value is required, expose it as a named theme token rather than embedding it in component markup.
 
 ## Button hierarchy
 
@@ -42,6 +50,9 @@ Borders are reserved for controls whose boundary communicates state, such as sel
 
 - `app/page.tsx` coordinates application state and user actions.
 - `components/service-ui.tsx` owns reusable operational cards, sheets, and forms.
+- `components/app-shell.tsx` owns persistent product chrome: the service header, primary navigation, and action toast.
+- `components/operational-ui.tsx` owns repeated operational patterns such as paper surfaces, empty states, status badges, detail panels, and choice lists.
+- `components/service-views.tsx` owns the full Bookings and Tables view compositions; `app/page.tsx` supplies state and actions.
 - `components/booking-calendar.tsx` owns the seven-day calendar controls only.
 - `components/table-overview.tsx` owns table grouping and filtering only.
 - `components/section-heading.tsx` standardizes section hierarchy. Every instance requires a heading and contextual value; a primary action and fieldset switch are optional slots.

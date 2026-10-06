@@ -32,14 +32,13 @@ import {
 } from '@/lib/restaurant';
 import type { Translate } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
+import { FormFootnote, operationalType } from '@/components/operational-ui';
 
-const operationalType =
-  'font-mono tracking-[0.015em] tabular-nums [font-feature-settings:"tnum"_1]';
 const selectedControl =
   'border-brand-orange-700 bg-brand-orange-700 text-white';
 const tableStatusStyles: Record<RestaurantTable['status'], string> = {
   available:
-    'border-[1.5px] border-status-ready-border bg-status-ready text-status-ready-foreground',
+    'border-status-ready-border bg-status-ready text-status-ready-foreground',
   occupied:
     'border-status-occupied-border bg-status-occupied text-status-occupied-foreground',
   reserved:
@@ -58,6 +57,69 @@ export const duration = (since: number, now: number) => {
     ? `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
     : `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 };
+
+/**
+ * Shared guest identity row for queue and reservation cards. Keep the phone
+ * action adjacent to the name so staff can scan and contact in one place.
+ */
+function PartyIdentity({
+  name,
+  phone,
+  partySize,
+  t,
+}: {
+  name: string;
+  phone: string;
+  partySize: number;
+  t: Translate;
+}) {
+  return (
+    <div className="flex min-w-0 items-start justify-start gap-x-4 gap-y-2.5">
+      <h3 className="min-w-0 text-lg leading-snug font-semibold [overflow-wrap:anywhere]">
+        {name}{' '}
+        <span className="text-base font-normal text-ink-muted">
+          · {t('party.people', { count: partySize })}
+        </span>
+      </h3>
+      <a
+        className="-mt-2 inline-flex min-h-11 items-center gap-1.5 whitespace-nowrap text-ink-muted no-underline [&>svg]:size-5 [&>svg]:text-brand-orange-700"
+        href={`tel:${phone.replace(/\s/g, '')}`}
+        aria-label={t('detail.phone', { phone })}
+      >
+        <Phone aria-hidden="true" /> {phone}
+      </a>
+    </div>
+  );
+}
+
+/** Preference summary shared by queue and reservation cards. */
+function PartyMeta({
+  smoking,
+  airConditioning,
+  t,
+}: {
+  smoking: boolean;
+  airConditioning: boolean;
+  t: Translate;
+}) {
+  return (
+    <span className="mt-2 flex flex-wrap gap-x-3 gap-y-1.5 text-base text-ink-muted max-md:gap-x-2.5 max-md:gap-y-1 [&_span]:inline-flex [&_span]:items-center [&_span]:gap-1.5 [&_svg]:size-5 [&_svg]:text-brand-orange-700">
+      <span>
+        {smoking ? <Cigarette /> : <Ban />}
+        {t(smoking ? 'party.smoking' : 'party.nonSmoking')}
+      </span>
+      {airConditioning && (
+        <span>
+          <Snowflake /> {t('party.airConditioned')}
+        </span>
+      )}
+    </span>
+  );
+}
+/**
+ * Responsive task sheet: bottom-anchored on compact screens and centered on
+ * larger screens. Use for one focused operational decision at a time.
+ */
 export function Sheet({
   title,
   description,
@@ -76,8 +138,8 @@ export function Sheet({
         if (!open) onClose();
       }}
     >
-      <DialogContent className="bottom-0 top-auto left-0 max-h-[calc(100dvh-max(16px,env(safe-area-inset-top)))] w-full max-w-full translate-none gap-5 overflow-y-auto overscroll-y-contain rounded-t-[22px] rounded-b-none bg-paper px-5 pt-[27px] pb-[max(25px,env(safe-area-inset-bottom))] [-webkit-overflow-scrolling:touch] min-[761px]:top-1/2 min-[761px]:left-1/2 min-[761px]:max-h-[90dvh] min-[761px]:max-w-[450px] min-[761px]:-translate-x-1/2 min-[761px]:-translate-y-1/2 min-[761px]:rounded-[20px] min-[761px]:p-7 [&_[data-slot=dialog-close]]:top-2 [&_[data-slot=dialog-close]]:right-2 [&_[data-slot=dialog-close]]:min-h-11 [&_[data-slot=dialog-close]]:min-w-11">
-        <DialogTitle className="pr-5 text-[25px] leading-[1.2] font-semibold tracking-[-0.8px]">
+      <DialogContent className="bottom-0 top-auto left-0 max-h-dvh w-full max-w-full translate-none gap-5 overflow-y-auto overscroll-y-contain rounded-t-2xl rounded-b-none bg-paper px-5 pt-7 pb-6 [-webkit-overflow-scrolling:touch] md:top-1/2 md:left-1/2 md:max-w-md md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-2xl md:p-7 [&_[data-slot=dialog-close]]:top-2 [&_[data-slot=dialog-close]]:right-2 [&_[data-slot=dialog-close]]:min-h-11 [&_[data-slot=dialog-close]]:min-w-11">
+        <DialogTitle className="pr-5 text-2xl leading-tight font-semibold tracking-tight">
           {title}
         </DialogTitle>
         <DialogDescription>{description}</DialogDescription>
@@ -86,6 +148,7 @@ export function Sheet({
     </Dialog>
   );
 }
+/** Status-aware table card used in both the Tonight and full Tables views. */
 export function TableCard({
   table,
   now,
@@ -105,19 +168,14 @@ export function TableCard({
     <button
       onClick={onClick}
       className={cn(
-        'flex min-h-28 min-w-0 flex-col rounded-[10px] border bg-muted px-2 py-2.5 text-left transition-transform hover:-translate-y-0.5 min-[769px]:min-h-[119px] min-[769px]:rounded-xl min-[769px]:px-3 min-[769px]:py-[13px]',
+        'flex min-h-28 min-w-0 flex-col rounded-xl border bg-muted p-2.5 text-left transition-transform hover:-translate-y-0.5 md:min-h-32 md:p-3',
         tableStatusStyles[table.status],
         className,
       )}
       aria-label={`${table.name}, ${t('party.people', { count: table.capacity })}, ${t('status.' + table.status)}`}
     >
       <span className="flex items-center justify-between [&>svg]:text-current">
-        <b
-          className={cn(
-            operationalType,
-            'text-xl font-semibold min-[769px]:text-[22px]',
-          )}
-        >
+        <b className={cn(operationalType, 'text-xl font-semibold md:text-2xl')}>
           {table.name}
         </b>
         {table.status === 'available' ? (
@@ -130,11 +188,11 @@ export function TableCard({
           <Clock3 size={20} />
         )}
       </span>
-      <span className="mt-[7px] flex min-w-0 items-start gap-[5px] text-base leading-[1.35] font-normal whitespace-normal text-ink-muted [overflow-wrap:anywhere]">
+      <span className="mt-2 flex min-w-0 items-start gap-1.5 text-base leading-snug font-normal whitespace-normal text-ink-muted [overflow-wrap:anywhere]">
         <Users size={18} />
         {table.capacity} · {t('area.' + table.area)}
       </span>
-      <span className="mt-auto flex flex-wrap items-end justify-between gap-1.5 pt-3 text-base leading-[1.35] font-semibold whitespace-normal min-[769px]:pt-[15px]">
+      <span className="mt-auto flex flex-wrap items-end justify-between gap-1.5 pt-3 text-base leading-snug font-semibold whitespace-normal md:pt-4">
         <span className="min-w-0 [overflow-wrap:anywhere]">
           {t('status.' + table.status)}
         </span>
@@ -142,7 +200,7 @@ export function TableCard({
           <span
             className={cn(
               operationalType,
-              'inline-flex min-w-0 max-w-full items-center gap-1 [overflow-wrap:anywhere] [&>svg]:size-[18px]',
+              'inline-flex min-w-0 max-w-full items-center gap-1 [overflow-wrap:anywhere] [&>svg]:size-4.5',
             )}
           >
             <Timer aria-hidden="true" /> {duration(table.seatedAt, now)}
@@ -151,7 +209,7 @@ export function TableCard({
           <span
             className={cn(
               operationalType,
-              'inline-flex min-w-0 max-w-full items-center gap-1 [overflow-wrap:anywhere] [&>svg]:size-[18px]',
+              'inline-flex min-w-0 max-w-full items-center gap-1 [overflow-wrap:anywhere] [&>svg]:size-4.5',
             )}
           >
             <Clock3 aria-hidden="true" /> {reservation.time}
@@ -161,6 +219,7 @@ export function TableCard({
     </button>
   );
 }
+/** Queue row with ticket identity, contact details, wait estimate, and seat action. */
 export function QueueCard({
   party: q,
   now,
@@ -175,11 +234,11 @@ export function QueueCard({
   t: Translate;
 }) {
   return (
-    <article className="flex min-h-[108px] items-center gap-2.5 border-b border-dashed border-border px-[13px] py-[17px] last:border-b-0 min-[769px]:min-h-[105px] min-[769px]:gap-3.5 min-[769px]:px-[18px] min-[769px]:py-5 [&>button]:px-3">
+    <article className="flex min-h-28 items-center gap-2.5 border-b border-dashed border-border px-3 py-4 last:border-b-0 md:gap-3.5 md:px-4 md:py-5 [&>button]:px-3">
       <button
         className={cn(
           operationalType,
-          'grid h-[43px] min-w-11 rotate-[-0.7deg] place-items-center rounded-sm border-0 bg-ticket text-base font-bold text-ticket-foreground shadow-[0_2px_5px_oklch(31%_0.092_12/9%)] min-[769px]:h-[46px] min-[769px]:min-w-[49px] min-[769px]:text-[17px]',
+          'grid size-12 -rotate-1 place-items-center rounded-sm border-0 bg-ticket text-lg font-bold text-ticket-foreground shadow-sm',
         )}
         onClick={onDetail}
         aria-label={`${q.queueNumber} ${q.customerName || t('queue.walkin')}`}
@@ -187,21 +246,12 @@ export function QueueCard({
         {q.queueNumber}
       </button>
       <div className="min-w-0 flex-1">
-        <div className="flex min-w-0 items-start justify-start gap-x-4 gap-y-2.5">
-          <h3 className="mb-2 min-w-0 text-lg leading-[1.3] font-semibold [overflow-wrap:anywhere]">
-            {q.customerName || t('queue.walkin')}{' '}
-            <span className="text-base font-normal text-ink-muted">
-              · {t('party.people', { count: q.partySize })}
-            </span>
-          </h3>
-          <a
-            className="-mt-2.5 inline-flex min-h-11 items-center gap-1.5 whitespace-nowrap text-ink-muted no-underline [&>svg]:size-5 [&>svg]:text-brand-orange-700"
-            href={`tel:${q.phone.replace(/\s/g, '')}`}
-            aria-label={t('detail.phone', { phone: q.phone })}
-          >
-            <Phone aria-hidden="true" /> {q.phone}
-          </a>
-        </div>
+        <PartyIdentity
+          name={q.customerName || t('queue.walkin')}
+          phone={q.phone}
+          partySize={q.partySize}
+          t={t}
+        />
         <p
           className={cn(
             operationalType,
@@ -212,24 +262,18 @@ export function QueueCard({
             <Clock3 aria-hidden="true" />
             {t('queue.waiting', { count: minutes(q.joinedAt, now) })}
           </span>
-          <span className="inline-flex items-center gap-1.5 text-ink-muted max-[760px]:mt-[5px] max-[760px]:block max-[760px]:first-letter:text-transparent">
+          <span className="inline-flex items-center gap-1.5 text-ink-muted max-md:mt-1 max-md:block max-md:first-letter:text-transparent">
             {t('queue.estimate', {
               min: q.estimatedWaitMinutes || 15,
               max: (q.estimatedWaitMinutes || 15) + 5,
             })}
           </span>
         </p>
-        <span className="mt-2 flex flex-wrap gap-x-3 gap-y-1.5 text-base text-ink-muted max-[760px]:gap-x-2.5 max-[760px]:gap-y-[5px] [&_svg]:size-5 [&_svg]:text-brand-orange-700">
-          <span className="inline-flex items-center gap-1.5">
-            {q.smoking ? <Cigarette /> : <Ban />}
-            {t(q.smoking ? 'party.smoking' : 'party.nonSmoking')}
-          </span>
-          {q.airConditioning && (
-            <span className="inline-flex items-center gap-1.5">
-              <Snowflake /> {t('party.airConditioned')}
-            </span>
-          )}
-        </span>
+        <PartyMeta
+          smoking={q.smoking}
+          airConditioning={Boolean(q.airConditioning)}
+          t={t}
+        />
       </div>
       <Button
         variant="secondary"
@@ -241,6 +285,7 @@ export function QueueCard({
     </article>
   );
 }
+/** Reservation row with arrival state and the next available service action. */
 export function ReservationCard({
   reservation: r,
   soon,
@@ -259,13 +304,13 @@ export function ReservationCard({
   return (
     <article
       className={cn(
-        'flex items-center gap-3.5 border-b border-border px-2.5 py-[18px] last:border-b-0 min-[761px]:px-4 min-[761px]:py-[22px]',
+        'flex items-center gap-3.5 border-b border-border px-2.5 py-4 last:border-b-0 md:px-4 md:py-6',
         soon && 'relative bg-status-reserved',
       )}
     >
       <button
         className={cn(
-          'min-h-12 min-w-[57px] border-0 bg-transparent p-0 text-left text-[19px] font-semibold',
+          'min-h-12 min-w-14 border-0 bg-transparent p-0 text-left text-lg font-semibold',
           soon && 'text-status-reserved-foreground',
         )}
         onClick={onEdit}
@@ -274,33 +319,24 @@ export function ReservationCard({
         <span
           className={cn(
             operationalType,
-            'flex items-center gap-1.5 text-[19px] font-semibold',
+            'flex items-center gap-1.5 text-lg font-semibold',
           )}
         >
           {r.time}
         </span>
-        <span className="mt-[5px] block text-base font-normal text-ink-muted">
+        <span className="mt-1 block text-base font-normal text-ink-muted">
           {r.assignedTableId || t('booking.label')}
         </span>
       </button>
       <div className="min-w-0 flex-1">
-        <div className="flex min-w-0 items-start justify-start gap-x-4 gap-y-2.5">
-          <h3 className="min-w-0 text-lg font-semibold [overflow-wrap:anywhere]">
-            {r.customerName}{' '}
-            <span className="text-base font-normal text-ink-muted">
-              · {t('party.people', { count: r.partySize })}
-            </span>
-          </h3>
-          <a
-            className="-mt-2.5 inline-flex min-h-11 items-center gap-1.5 whitespace-nowrap text-ink-muted no-underline [&>svg]:size-5 [&>svg]:text-brand-orange-700"
-            href={`tel:${r.phone.replace(/\s/g, '')}`}
-            aria-label={t('detail.phone', { phone: r.phone })}
-          >
-            <Phone aria-hidden="true" /> {r.phone}
-          </a>
-        </div>
+        <PartyIdentity
+          name={r.customerName}
+          phone={r.phone}
+          partySize={r.partySize}
+          t={t}
+        />
         <p
-          className={cn('mt-[7px] text-base text-ink-muted', {
+          className={cn('mt-2 text-base text-ink-muted', {
             'text-status-reserved-foreground': r.status === 'upcoming',
             'font-semibold text-status-ready-foreground':
               r.status === 'arrived',
@@ -312,17 +348,11 @@ export function ReservationCard({
             ? t('booking.dueSoon')
             : t('status.' + r.status)}
         </p>
-        <span className="mt-2 flex flex-wrap gap-x-3 gap-y-1.5 text-base text-ink-muted [&_svg]:size-5 [&_svg]:text-brand-orange-700">
-          <span className="inline-flex items-center gap-1.5">
-            {r.smoking ? <Cigarette /> : <Ban />}
-            {t(r.smoking ? 'party.smoking' : 'party.nonSmoking')}
-          </span>
-          {r.airConditioning && (
-            <span className="inline-flex items-center gap-1.5">
-              <Snowflake /> {t('party.airConditioned')}
-            </span>
-          )}
-        </span>
+        <PartyMeta
+          smoking={r.smoking}
+          airConditioning={Boolean(r.airConditioning)}
+          t={t}
+        />
       </div>
       {r.status === 'upcoming' ? (
         <Button
@@ -356,6 +386,77 @@ export interface PartyInput {
   airConditioning: boolean;
   assignedTableId?: string;
 }
+
+/**
+ * Visible and assistive progress for the short booking/walk-in flow. Step
+ * labels describe the information requested rather than internal process.
+ */
+function FormProgress({
+  steps,
+  currentStep,
+  t,
+}: {
+  steps: string[];
+  currentStep: number;
+  t: Translate;
+}) {
+  return (
+    <div className="grid gap-2.5 pb-1.5" aria-label={t('form.progress')}>
+      <p
+        id="form-progress-status"
+        className="font-semibold text-ink-muted"
+        aria-live="polite"
+      >
+        {t('form.step', { current: currentStep, total: steps.length })}
+      </p>
+      <progress
+        className="absolute top-0 left-0 z-4 h-1.5 w-full appearance-none overflow-hidden rounded-t-2xl border-0 bg-muted [&::-moz-progress-bar]:bg-brand-orange-700 [&::-webkit-progress-bar]:bg-muted [&::-webkit-progress-value]:bg-brand-orange-700"
+        value={currentStep}
+        max={steps.length}
+        aria-labelledby="form-progress-status"
+      />
+      <ol className="m-0 flex list-none gap-2 p-0">
+        {steps.map((label, index) => {
+          const number = index + 1;
+          return (
+            <li
+              key={label}
+              className={cn(
+                'flex min-w-0 flex-1 flex-col items-center justify-start gap-2 text-center leading-tight text-ink-muted [&>span]:grid [&>span]:size-7 [&>span]:shrink-0 [&>span]:place-items-center [&>span]:rounded-full [&>span]:bg-muted [&>span]:font-bold',
+                number < currentStep &&
+                  '[&>span]:bg-status-ready [&>span]:text-status-ready-foreground',
+                number === currentStep &&
+                  'font-bold text-brand-orange-800 [&>span]:bg-brand-orange-700 [&>span]:text-paper',
+              )}
+              aria-current={number === currentStep ? 'step' : undefined}
+            >
+              <span>{number}</span>
+              {label}
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+  );
+}
+
+/** Inline validation message tied to one field through aria-describedby. */
+function FieldError({ id, children }: { id: string; children: ReactNode }) {
+  return (
+    <span
+      id={id}
+      className="mt-2 block leading-snug font-semibold text-brand-red-700!"
+      role="alert"
+    >
+      {children}
+    </span>
+  );
+}
+
+/**
+ * Guest and booking form. Walk-ins use two steps; bookings add scheduling as
+ * the third step so both workflows teach staff the same interaction pattern.
+ */
 export function PartyForm({
   booking = false,
   initial,
@@ -491,49 +592,14 @@ export function PartyForm({
   return (
     <form
       onSubmit={submit}
-      className="flex flex-col gap-5 [&_fieldset]:m-0 [&_fieldset]:border-0 [&_fieldset]:p-0 [&_label]:text-base [&_label]:font-semibold [&_legend]:text-base [&_legend]:font-semibold [&_label>span]:font-normal [&_label>span]:text-ink-muted [&_input]:mt-2 [&_input]:min-h-[47px] [&_input]:bg-paper [&_input]:text-base"
+      className="flex flex-col gap-5 [&_fieldset]:m-0 [&_fieldset]:border-0 [&_fieldset]:p-0 [&_label]:text-base [&_label]:font-semibold [&_legend]:text-base [&_legend]:font-semibold [&_label>span]:font-normal [&_label>span]:text-ink-muted [&_input]:mt-2 [&_input]:min-h-12 [&_input]:bg-paper [&_input]:text-base"
       noValidate
     >
-      <div className="grid gap-2.5 pb-1.5" aria-label={t('form.progress')}>
-        <p
-          id="form-progress-status"
-          className="font-semibold text-ink-muted"
-          aria-live="polite"
-        >
-          {t('form.step', { current: step, total: steps.length })}
-        </p>
-        <progress
-          className="absolute top-0 left-0 z-4 h-1.5 w-full appearance-none overflow-hidden rounded-t-[20px] border-0 bg-muted [&::-moz-progress-bar]:bg-brand-orange-700 [&::-webkit-progress-bar]:bg-muted [&::-webkit-progress-value]:bg-brand-orange-700"
-          value={step}
-          max={steps.length}
-          aria-labelledby="form-progress-status"
-        />
-        <ol className="m-0 flex list-none gap-2 p-0">
-          {steps.map((label, index) => {
-            const number = index + 1;
-            return (
-              <li
-                key={label}
-                className={cn(
-                  'flex min-w-0 flex-1 flex-col items-center justify-start gap-[7px] text-center leading-[1.25] text-ink-muted [&>span]:grid [&>span]:size-7 [&>span]:shrink-0 [&>span]:place-items-center [&>span]:rounded-full [&>span]:bg-muted [&>span]:font-bold',
-                  number < step &&
-                    '[&>span]:bg-status-ready [&>span]:text-status-ready-foreground',
-                  number === step &&
-                    'font-bold text-brand-orange-800 [&>span]:bg-brand-orange-700 [&>span]:text-paper',
-                )}
-                aria-current={number === step ? 'step' : undefined}
-              >
-                <span>{number}</span>
-                {label}
-              </li>
-            );
-          })}
-        </ol>
-      </div>
+      <FormProgress steps={steps} currentStep={step} t={t} />
       <div className={step !== 1 ? 'hidden' : 'flex flex-col gap-5'}>
         <fieldset>
           <legend>{t('form.partySize')}</legend>
-          <div className="mt-3 grid grid-cols-7 gap-[5px] min-[761px]:gap-1.5">
+          <div className="mt-3 grid grid-cols-7 gap-1 md:gap-1.5">
             {[1, 2, 3, 4, 5, 6, 7].map((n) => (
               <Button
                 type="button"
@@ -574,13 +640,7 @@ export function PartyForm({
               required
             />
             {errors.size && (
-              <span
-                id="party-size-error"
-                className="mt-[7px] block leading-[1.4] font-semibold text-brand-red-700!"
-                role="alert"
-              >
-                {errors.size}
-              </span>
+              <FieldError id="party-size-error">{errors.size}</FieldError>
             )}
           </label>
         )}
@@ -601,13 +661,7 @@ export function PartyForm({
             required={booking}
           />
           {errors.name && (
-            <span
-              id="party-name-error"
-              className="mt-[7px] block leading-[1.4] font-semibold text-brand-red-700!"
-              role="alert"
-            >
-              {errors.name}
-            </span>
+            <FieldError id="party-name-error">{errors.name}</FieldError>
           )}
         </label>
         <label htmlFor="party-phone">
@@ -628,13 +682,7 @@ export function PartyForm({
             required
           />
           {errors.phone && (
-            <span
-              id="party-phone-error"
-              className="mt-[7px] block leading-[1.4] font-semibold text-brand-red-700!"
-              role="alert"
-            >
-              {errors.phone}
-            </span>
+            <FieldError id="party-phone-error">{errors.phone}</FieldError>
           )}
         </label>
       </div>
@@ -724,13 +772,7 @@ export function PartyForm({
                 required
               />
               {errors.date && (
-                <span
-                  id="party-date-error"
-                  className="mt-[7px] block leading-[1.4] font-semibold text-brand-red-700!"
-                  role="alert"
-                >
-                  {errors.date}
-                </span>
+                <FieldError id="party-date-error">{errors.date}</FieldError>
               )}
             </label>
             <label htmlFor="party-time">
@@ -749,13 +791,7 @@ export function PartyForm({
                 required
               />
               {errors.time && (
-                <span
-                  id="party-time-error"
-                  className="mt-[7px] block leading-[1.4] font-semibold text-brand-red-700!"
-                  role="alert"
-                >
-                  {errors.time}
-                </span>
+                <FieldError id="party-time-error">{errors.time}</FieldError>
               )}
             </label>
           </div>
@@ -771,7 +807,7 @@ export function PartyForm({
                     type="button"
                     variant="outline"
                     className={cn(
-                      'h-auto min-h-[58px] flex-col gap-0.5 [&>span]:text-base [&>span]:font-medium [&>span]:text-ink-muted',
+                      'h-auto min-h-14 flex-col gap-0.5 [&>span]:text-base [&>span]:font-medium [&>span]:text-ink-muted',
                       assignedTableId === table.id &&
                         `${selectedControl} [&>span]:text-inherit`,
                     )}
@@ -790,11 +826,9 @@ export function PartyForm({
                 ))}
               </div>
             ) : (
-              <p className="text-center text-base leading-[1.7] text-ink-muted">
-                {t('form.noSuitableTable')}
-              </p>
+              <FormFootnote>{t('form.noSuitableTable')}</FormFootnote>
             )}
-            <p className="mt-2 text-base leading-[1.45] text-ink-muted">
+            <p className="mt-2 text-base leading-snug text-ink-muted">
               {t('form.assignTableHelp')}
             </p>
           </fieldset>
@@ -811,7 +845,7 @@ export function PartyForm({
           </label>
         </div>
       )}
-      <div className="sticky bottom-[-28px] z-2 mx-[-2px] flex items-center gap-2.5 bg-[linear-gradient(to_bottom,transparent,var(--paper)_12px)] px-0.5 pt-3 pb-0.5 [&>button]:w-0 [&>button]:flex-1">
+      <div className="sticky -bottom-7 z-2 -mx-0.5 flex items-center gap-2.5 bg-paper px-0.5 pt-3 pb-0.5 [&>button]:w-0 [&>button]:flex-1">
         {step > 1 && (
           <Button
             type="button"
@@ -827,12 +861,12 @@ export function PartyForm({
           <Button
             type="button"
             onClick={continueFlow}
-            className="min-h-[52px] w-full text-base"
+            className="min-h-12 w-full text-base"
           >
             {t('action.next')} <ArrowRight />
           </Button>
         ) : (
-          <Button type="submit" className="min-h-[52px] w-full text-base">
+          <Button type="submit" className="min-h-12 w-full text-base">
             {booking
               ? initial
                 ? t('form.saveBooking')
@@ -842,11 +876,7 @@ export function PartyForm({
           </Button>
         )}
       </div>
-      {!booking && step === 2 && (
-        <p className="text-center text-base leading-[1.7] text-ink-muted">
-          {t('form.fast')}
-        </p>
-      )}
+      {!booking && step === 2 && <FormFootnote>{t('form.fast')}</FormFootnote>}
     </form>
   );
 }

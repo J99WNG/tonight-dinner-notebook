@@ -7,14 +7,10 @@ import {
   Users,
   ArrowUpRight,
   CalendarDays,
-  LayoutGrid,
-  Moon,
   Check,
   Clock3,
   ArrowRight,
-  RotateCcw,
   MapPin,
-  X,
   NotebookPen,
   Phone,
   Cigarette,
@@ -42,14 +38,8 @@ import {
   duration,
   type PartyInput,
 } from '@/components/service-ui';
-import { BookingCalendar } from '@/components/booking-calendar';
 import { SectionHeading } from '@/components/section-heading';
-import {
-  TableOverview,
-  TableGroupingSwitch,
-  type TableFilter,
-  type TableGrouping,
-} from '@/components/table-overview';
+import type { TableFilter, TableGrouping } from '@/components/table-overview';
 import {
   addDays,
   formatServiceDate,
@@ -57,7 +47,25 @@ import {
   sevenDayWindow,
 } from '@/lib/dates';
 import { cn } from '@/lib/utils';
-type View = 'Tonight' | 'Bookings' | 'Tables';
+import {
+  ActionToast,
+  PrimaryNavigation,
+  ServiceHeader,
+  type ServiceView,
+} from '@/components/app-shell';
+import {
+  ChoiceItem,
+  ChoiceList,
+  DetailLine,
+  DetailPanel,
+  EmptyState,
+  FormFootnote,
+  OperationalSurface,
+  ReadyBadge,
+  SupportingText,
+  operationalType,
+} from '@/components/operational-ui';
+import { BookingsView, TablesView } from '@/components/service-views';
 type Modal =
   | { type: 'walk-in' }
   | { type: 'seat'; id: string; kind: 'queue' | 'reservation' }
@@ -66,28 +74,12 @@ type Modal =
   | { type: 'booking'; id?: string; date?: string }
   | { type: 'reset' }
   | null;
-const destinations = [
-  { name: 'Tonight' as const, icon: Moon },
-  { name: 'Bookings' as const, icon: CalendarDays },
-  { name: 'Tables' as const, icon: LayoutGrid },
-];
-const operationalType =
-  'font-mono tracking-[0.015em] tabular-nums [font-feature-settings:"tnum"_1]';
-const operationalSurface = 'rounded-[14px] bg-paper';
-const supportingText =
-  'mt-3.5 flex items-center gap-1.5 text-base leading-normal text-ink-muted';
-const emptyState =
-  'flex flex-col items-center gap-3 rounded-xl border border-dashed border-border px-5 py-[30px] text-center text-ink-muted [&>h3]:text-[17px] [&>h3]:text-foreground [&>p]:max-w-[300px] [&>p]:text-base [&>p]:leading-relaxed';
-const wideButton = 'min-h-[52px] w-full text-base';
-const detailBlock =
-  'flex flex-col gap-2.5 rounded-xl bg-muted p-6 [&>h3]:text-lg [&>h3]:font-semibold [&>p]:text-base [&>p]:leading-normal [&>p]:text-ink-muted';
-const detailLine =
-  'inline-flex items-center gap-1.5 [&>svg]:size-5 [&>svg]:text-brand-orange-700';
+const wideButton = 'min-h-12 w-full text-base';
 const formRow =
   'flex gap-3 [&>*]:min-w-0 [&>*]:flex-1 [&>button]:px-2 [&>button]:text-base [&>button]:whitespace-normal';
 const ticket = cn(
   operationalType,
-  'grid h-[46px] min-w-[49px] rotate-[-0.7deg] place-items-center rounded-sm border-0 bg-ticket text-[17px] font-bold text-ticket-foreground shadow-[0_2px_5px_oklch(31%_0.092_12/9%)]',
+  'grid size-12 -rotate-1 place-items-center rounded-sm border-0 bg-ticket text-lg font-bold text-ticket-foreground shadow-sm',
 );
 const hongKongClock = new Intl.DateTimeFormat('en-GB', {
   timeZone: 'Asia/Hong_Kong',
@@ -96,12 +88,17 @@ const hongKongClock = new Intl.DateTimeFormat('en-GB', {
   second: '2-digit',
   hourCycle: 'h23',
 });
+
+/**
+ * Application orchestrator. Product designers should find visual composition
+ * in the extracted view/pattern components; this file owns state and actions.
+ */
 export default function Home() {
   const [state, setState] = useState<ServiceState>(() => seed(0));
   const stateRef = useRef(state);
   const [hydrated, setHydrated] = useState(false);
   const [now, setNow] = useState(0);
-  const [view, setView] = useState<View>('Tonight');
+  const [view, setView] = useState<ServiceView>('Tonight');
   const [modal, setModal] = useState<Modal>(null);
   const [toast, setToast] = useState('');
   const [previous, setPrevious] = useState<ServiceState | null>(null);
@@ -313,7 +310,7 @@ export default function Home() {
       ? state.reservations.find((r) => r.id === modal.id)
       : undefined;
   const tableGrid = (
-    <div className="grid grid-cols-2 gap-3 min-[769px]:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
       {state.tables.map((tableItem) => (
         <TableCard
           key={tableItem.id}
@@ -344,77 +341,16 @@ export default function Home() {
     />
   );
   return (
-    <div className="mx-auto max-w-[1240px]">
-      <header className="mx-5 flex min-h-[92px] items-center gap-[9px] border-b border-border min-[769px]:mx-12 min-[769px]:min-h-28 min-[769px]:gap-5">
-        <div className="flex min-w-0 items-center gap-2 min-[769px]:gap-3.5">
-          <svg
-            className="h-[50px] w-[42px] overflow-hidden min-[769px]:h-[72px] min-[769px]:w-[62px]"
-            viewBox="0 0 640 700"
-            aria-hidden="true"
-          >
-            <image
-              href="supreme-roast-goose-king-logo.svg"
-              width="640"
-              height="826"
-            />
-          </svg>
-          <strong className="text-base leading-[1.2] tracking-[0.04em] whitespace-nowrap min-[769px]:leading-[1.3]">
-            新志興訂位簿
-          </strong>
-        </div>
-        <div className="ml-auto flex items-center gap-2 min-[769px]:gap-[18px]">
-          <span className="hidden items-center gap-[7px] text-base min-[761px]:flex">
-            <i className="size-[7px] rounded-full bg-status-ready-border" />{' '}
-            {t('service.open')}
-          </span>
-
-          <div
-            className={cn(
-              operationalType,
-              'inline-flex min-h-11 items-center gap-[9px] text-foreground [&>svg]:size-[22px] [&>svg]:text-brand-orange-700',
-            )}
-            aria-label={`${t('service.hkTime')}: ${clock}`}
-          >
-            <Clock3 aria-hidden="true" />
-            <span className="flex flex-col items-start gap-px">
-              <small className="sr-only text-base leading-[1.1] text-ink-muted min-[761px]:not-sr-only">
-                {t('service.currentTime')}
-              </small>
-              <b className="text-lg leading-[1.1] min-[761px]:text-[22px]">
-                {clock}
-              </b>
-            </span>
-          </div>
-
-          <div
-            className="flex rounded-[9px] bg-muted p-[3px]"
-            aria-label="Language / 語言 / 语言"
-          >
-            {(
-              [
-                ['en', 'EN'],
-                ['zh-HK', '繁'],
-                ['zh-CN', '简'],
-              ] as const
-            ).map(([code, label]) => (
-              <button
-                className="min-h-8 min-w-[31px] rounded-[7px] border-0 bg-transparent text-base text-ink-muted aria-pressed:bg-paper aria-pressed:font-bold aria-pressed:text-brand-orange-800 aria-pressed:shadow-[0_1px_5px_oklch(27.9%_0.102_12.9/7%)] min-[761px]:min-h-[34px] min-[761px]:min-w-[35px]"
-                key={code}
-                aria-pressed={language === code}
-                onClick={() => changeLanguage(code)}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </header>
-      <main
-        className="px-5 pt-6 pb-[125px] min-[769px]:px-12 min-[769px]:pt-9 min-[769px]:pb-[130px]"
-        aria-busy={!hydrated}
-      >
-        <div className="mb-6 flex flex-col items-start justify-between gap-x-10 gap-y-2 min-[769px]:flex-row min-[769px]:items-baseline min-[769px]:gap-y-5">
-          <h1 className="my-2 text-[38px] leading-[1.2] font-semibold tracking-[-2.5px] min-[769px]:text-5xl [&>span]:text-brand-orange-600">
+    <div className="mx-auto max-w-7xl">
+      <ServiceHeader
+        clock={clock}
+        language={language}
+        onLanguageChange={changeLanguage}
+        t={t}
+      />
+      <main className="px-5 pt-6 pb-32 md:px-12 md:pt-9" aria-busy={!hydrated}>
+        <div className="mb-6 flex flex-col items-start justify-between gap-x-10 gap-y-2 md:flex-row md:items-baseline md:gap-y-5">
+          <h1 className="my-2 text-4xl leading-tight font-semibold tracking-tight md:text-5xl [&>span]:text-brand-orange-600">
             {t('nav.' + view.toLowerCase())}
             <span>.</span>
           </h1>
@@ -437,14 +373,14 @@ export default function Home() {
           </p>
         </div>
         {storageIssue && (
-          <output className="mb-5 block bg-status-cleaning p-[15px] leading-normal text-status-cleaning-foreground">
+          <output className="mb-5 block bg-status-cleaning p-4 leading-normal text-status-cleaning-foreground">
             {t('storage.warning')}
           </output>
         )}
         {view === 'Tonight' ? (
-          <div className="flex flex-col gap-6 min-[769px]:grid min-[769px]:grid-cols-[1fr_1.1fr] min-[769px]:[grid-template-areas:'tables_tables'_'bookings_queue'_'location_queue'] min-[769px]:gap-10">
+          <div className="flex flex-col gap-6 md:grid md:grid-cols-2 md:gap-8">
             <div className="contents">
-              <section className="order-0 min-[769px]:[grid-area:tables]">
+              <section className="order-0 md:col-span-2">
                 <SectionHeading
                   heading={t('tables.title')}
                   context={
@@ -452,24 +388,19 @@ export default function Home() {
                       <span>
                         {t('tables.inGroup', { count: state.tables.length })}
                       </span>
-                      <span
-                        className={cn(
-                          operationalType,
-                          'rounded-[20px] bg-status-ready px-2.5 py-1.5 text-base text-status-ready-foreground',
-                        )}
-                      >
+                      <ReadyBadge>
                         {t('tables.ready', { count: ready.length })}
-                      </span>
+                      </ReadyBadge>
                     </>
                   }
                 />
                 {tableGrid}
-                <p className={supportingText}>{t('tables.tap')}</p>
+                <SupportingText>{t('tables.tap')}</SupportingText>
                 {nextBooking && (
                   <button
                     className={cn(
                       operationalType,
-                      'mt-3.5 hidden min-h-[46px] w-full items-center gap-[7px] rounded-[9px] border border-brand-orange-200 bg-brand-orange-100 p-2.5 text-left text-base text-brand-red-700 max-[760px]:flex [&>span]:flex-1 [&_b]:font-semibold',
+                      'mt-3 hidden min-h-12 w-full items-center gap-2 rounded-lg border border-brand-orange-200 bg-brand-orange-100 p-2.5 text-left text-base text-brand-red-700 max-md:flex [&>span]:flex-1 [&_b]:font-semibold',
                     )}
                     onClick={() =>
                       setModal(
@@ -501,7 +432,7 @@ export default function Home() {
                   </button>
                 )}
               </section>
-              <section className="order-2 mt-0 min-[769px]:mt-[5px] min-[769px]:[grid-area:bookings]">
+              <section className="order-2 mt-0 md:col-start-1 md:row-start-2">
                 <SectionHeading
                   heading={t('booking.coming')}
                   context={t('booking.dayCount', {
@@ -519,27 +450,27 @@ export default function Home() {
                 />
                 {reservations.length ? (
                   <>
-                    <div className={cn(operationalSurface, '[&>article]:px-5')}>
+                    <OperationalSurface className="[&>article]:px-5">
                       {reservations.map(bookingCard)}
-                    </div>
-                    <p className={supportingText}>
+                    </OperationalSurface>
+                    <SupportingText>
                       <Clock3 size={18} /> {t('booking.held')}
-                    </p>
+                    </SupportingText>
                   </>
                 ) : (
-                  <div className={emptyState}>
-                    <CalendarDays />
-                    <h3>{t('booking.none')}</h3>
-                    <p>{t('booking.accounted')}</p>
-                  </div>
+                  <EmptyState
+                    icon={<CalendarDays />}
+                    title={t('booking.none')}
+                    description={t('booking.accounted')}
+                  />
                 )}
               </section>
-              <div className="order-3 mt-px flex items-center gap-[7px] pb-1 text-base text-ink-muted min-[769px]:[grid-area:location]">
+              <div className="order-3 mt-px flex items-center gap-2 pb-1 text-base text-ink-muted md:col-start-1 md:row-start-3">
                 <MapPin size={18} />
                 <span>牛池灣 · 60A Lung Chi Path, Ngau Chi Wan</span>
               </div>
             </div>
-            <section className="order-1 self-start min-[769px]:[grid-area:queue]">
+            <section className="order-1 self-start md:col-start-2 md:row-span-2 md:row-start-2">
               <SectionHeading
                 heading={t('queue.title')}
                 context={t('queue.groups', { count: waiting.length })}
@@ -551,7 +482,7 @@ export default function Home() {
               />
               {waiting.length ? (
                 <>
-                  <div className={cn(operationalSurface, 'overflow-hidden')}>
+                  <OperationalSurface className="overflow-hidden">
                     {waiting.map((q) => (
                       <QueueCard
                         key={q.id}
@@ -564,212 +495,92 @@ export default function Home() {
                         t={t}
                       />
                     ))}
-                  </div>
-                  <p className={supportingText}>
+                  </OperationalSurface>
+                  <SupportingText>
                     <NotebookPen size={18} /> {t('queue.order')}
-                  </p>
+                  </SupportingText>
                 </>
               ) : (
-                <div className={emptyState}>
-                  <Check />
-                  <h3>{t('queue.clear')}</h3>
-                  <p>{t('queue.none')}</p>
+                <EmptyState
+                  icon={<Check />}
+                  title={t('queue.clear')}
+                  description={t('queue.none')}
+                >
                   <Button onClick={() => setModal({ type: 'walk-in' })}>
                     <Plus /> {t('queue.add')}
                   </Button>
-                </div>
+                </EmptyState>
               )}
             </section>
           </div>
         ) : view === 'Bookings' ? (
-          <section className="w-full max-w-none">
-            <BookingCalendar
-              dates={bookingWeek}
-              selectedDate={selectedBookingDate}
-              reservations={state.reservations}
-              language={language}
-              onSelectDate={setSelectedBookingDate}
-              onPreviousWeek={() => {
-                const start = addDays(bookingWeekStart, -7);
-                setBookingWeekStart(start);
-                setSelectedBookingDate(start);
-              }}
-              onNextWeek={() => {
-                const start = addDays(bookingWeekStart, 7);
-                setBookingWeekStart(start);
-                setSelectedBookingDate(start);
-              }}
-              onToday={() => {
-                const today = hongKongToday();
-                setBookingWeekStart(today);
-                setSelectedBookingDate(today);
-              }}
-              t={t}
-            />
-            <div className={cn(operationalSurface, 'mt-7 p-6')}>
-              <SectionHeading
-                className="items-end [&_h2]:mt-[5px]"
-                heading={formatServiceDate(selectedBookingDate, language, {
-                  weekday: 'long',
-                  day: 'numeric',
-                  month: 'long',
-                })}
-                context={t('booking.dayCount', {
-                  count: state.reservations.filter(
-                    (reservation) => reservation.date === selectedBookingDate,
-                  ).length,
-                })}
-                action={
-                  <Button
-                    onClick={() =>
-                      setModal({
-                        type: 'booking',
-                        date: selectedBookingDate,
-                      })
-                    }
-                  >
-                    <Plus /> {t('booking.add')}
-                  </Button>
-                }
-              />
-              <div>
-                {state.reservations
-                  .filter(
-                    (reservation) => reservation.date === selectedBookingDate,
-                  )
-                  .sort((a, b) => a.time.localeCompare(b.time))
-                  .map(bookingCard)}
-              </div>
-              {!state.reservations.some(
-                (reservation) => reservation.date === selectedBookingDate,
-              ) && (
-                <div className={emptyState}>
-                  <CalendarDays />
-                  <h3>{t('booking.empty')}</h3>
-                  <p>{t('booking.walkins')}</p>
-                </div>
-              )}
-            </div>
-            <p className={supportingText}>{t('booking.tap')}</p>
-          </section>
+          <BookingsView
+            dates={bookingWeek}
+            selectedDate={selectedBookingDate}
+            reservations={state.reservations}
+            language={language}
+            onSelectDate={setSelectedBookingDate}
+            onPreviousWeek={() => {
+              const start = addDays(bookingWeekStart, -7);
+              setBookingWeekStart(start);
+              setSelectedBookingDate(start);
+            }}
+            onNextWeek={() => {
+              const start = addDays(bookingWeekStart, 7);
+              setBookingWeekStart(start);
+              setSelectedBookingDate(start);
+            }}
+            onToday={() => {
+              const today = hongKongToday();
+              setBookingWeekStart(today);
+              setSelectedBookingDate(today);
+            }}
+            onAddBooking={() =>
+              setModal({ type: 'booking', date: selectedBookingDate })
+            }
+            renderBooking={bookingCard}
+            t={t}
+          />
         ) : (
-          <section className="w-full max-w-none">
-            <SectionHeading
-              heading={t('tables.every')}
-              context={
-                <span
-                  className={cn(
-                    operationalType,
-                    'rounded-[20px] bg-status-ready px-2.5 py-1.5 text-base text-status-ready-foreground',
-                  )}
-                >
-                  {t('tables.ready', { count: ready.length })}
-                </span>
-              }
-              switcher={
-                <TableGroupingSwitch
-                  grouping={tableGrouping}
-                  onGroupingChange={setTableGrouping}
-                  t={t}
-                />
-              }
-            />
-            <TableOverview
-              tables={state.tables}
-              reservations={state.reservations}
-              now={now}
-              grouping={tableGrouping}
-              statusFilter={tableFilter}
-              onStatusFilterChange={setTableFilter}
-              onOpenTable={(id) => setModal({ type: 'table', id })}
-              t={t}
-            />
-            <p className={supportingText}>
-              {t('tables.count', {
-                count: state.tables.length,
-                seats: state.tables.reduce(
-                  (sum, table) => sum + table.capacity,
-                  0,
-                ),
-              })}
-            </p>
-            <div className="mt-[30px] border-t border-border pt-[25px]">
-              <h3 className="text-base font-semibold">{t('demo.title')}</h3>
-              <p className="my-4 flex items-center gap-2.5 text-base">
-                {t('demo.flow')}
-              </p>
-              <small className="text-ink-muted">{t('demo.help')}</small>
-            </div>
-            <Button
-              variant="quinary"
-              className="mt-10 mb-2 pl-0 text-base text-ink-muted"
-              onClick={() => setModal({ type: 'reset' })}
-            >
-              <RotateCcw /> {t('action.reset')}
-            </Button>
-            <p className="text-base leading-[1.7] text-ink-muted">
-              {t('demo.note')}
-              <br />
-              {t('demo.clock')}
-            </p>
-          </section>
+          <TablesView
+            tables={state.tables}
+            reservations={state.reservations}
+            now={now}
+            grouping={tableGrouping}
+            statusFilter={tableFilter}
+            onGroupingChange={setTableGrouping}
+            onStatusFilterChange={setTableFilter}
+            onOpenTable={(id) => setModal({ type: 'table', id })}
+            onReset={() => setModal({ type: 'reset' })}
+            t={t}
+          />
         )}
       </main>
-      <nav
-        className="fixed inset-x-0 bottom-0 z-20 flex justify-around gap-1.5 border border-b-0 border-border bg-paper px-3.5 pt-1.5 pb-[max(6px,env(safe-area-inset-bottom))] shadow-[0_6px_30px_oklch(27.9%_0.102_12.9/5%)] min-[769px]:inset-x-auto min-[769px]:bottom-5 min-[769px]:left-1/2 min-[769px]:-translate-x-1/2 min-[769px]:rounded-[18px] min-[769px]:border-b min-[769px]:p-[7px]"
-        aria-label="Main navigation"
-      >
-        {destinations.map(({ name, icon: Icon }) => (
-          <button
-            key={name}
-            aria-current={view === name ? 'page' : undefined}
-            className={cn(
-              'relative flex min-h-[58px] min-w-0 flex-1 flex-col items-center justify-center gap-[5px] rounded-xl border-0 bg-transparent text-base text-ink-muted min-[769px]:min-h-[52px] min-[769px]:min-w-[122px] min-[769px]:flex-row min-[769px]:gap-[9px]',
-              view === name &&
-                'bg-brand-orange-100 font-bold text-brand-orange-800',
-            )}
-            onClick={() => {
-              setView(name);
-              window.scrollTo({ top: 0 });
-            }}
-          >
-            <Icon size={20} />
-            <span>{t('nav.' + name.toLowerCase())}</span>
-            {name === 'Bookings' &&
-              state.reservations.some((r) => r.status === 'arrived') && (
-                <i className="size-[5px] rounded-full bg-brand-red-500" />
-              )}
-          </button>
-        ))}
-      </nav>
+      <PrimaryNavigation
+        currentView={view}
+        hasArrivedBooking={state.reservations.some(
+          (reservation) => reservation.status === 'arrived',
+        )}
+        onSelect={(nextView) => {
+          setView(nextView);
+          window.scrollTo({ top: 0 });
+        }}
+        t={t}
+      />
       {toast && (
-        <output
-          className="fixed bottom-[88px] left-1/2 z-70 flex w-max max-w-[calc(100%-28px)] -translate-x-1/2 items-center gap-1.5 rounded-xl bg-foreground px-2.5 py-[7px] text-base text-white shadow-[0_8px_30px_oklch(27.9%_0.102_12.9/14%)] min-[761px]:bottom-[104px] min-[761px]:gap-2.5 min-[761px]:px-3.5 min-[761px]:py-[9px] [&>svg]:text-brand-orange-200 [&>span]:max-w-[205px] min-[761px]:[&>span]:max-w-[270px] [&>button]:min-h-11 [&>button]:min-w-10 [&>button]:border-0 [&>button]:bg-transparent [&>button]:font-semibold [&>button]:text-brand-orange-100"
-          aria-live="polite"
-        >
-          <Check size={18} />
-          <span>{toast}</span>
-          {previous && (
-            <button
-              onClick={() => {
-                if (previous) {
-                  stateRef.current = previous;
-                  setState(previous);
-                  setPrevious(null);
-                  setToast('Action undone');
-                }
-              }}
-            >
-              {t('action.undo')}
-            </button>
-          )}
-          <button
-            aria-label="Dismiss notification"
-            onClick={() => setToast('')}
-          >
-            <X size={20} />
-          </button>
-        </output>
+        <ActionToast
+          message={toast}
+          canUndo={Boolean(previous)}
+          onUndo={() => {
+            if (!previous) return;
+            stateRef.current = previous;
+            setState(previous);
+            setPrevious(null);
+            setToast('Action undone');
+          }}
+          onDismiss={() => setToast('')}
+          t={t}
+        />
       )}
       {modal?.type === 'walk-in' && (
         <Sheet
@@ -788,13 +599,12 @@ export default function Home() {
         >
           {choices.length ? (
             <>
-              <p className="text-base font-bold tracking-[1.4px] text-ink-muted">
+              <p className="text-base font-bold tracking-wide text-ink-muted">
                 {t('sheet.suitable')}
               </p>
-              <div className="flex flex-col gap-2">
+              <ChoiceList>
                 {choices.map((choice, i) => (
-                  <button
-                    className="flex min-h-20 w-full items-center gap-[15px] rounded-xl border border-brand-orange-200 bg-brand-orange-50 p-4 text-left [&>span:nth-child(2)]:flex-1 [&_b]:text-base [&_b]:font-semibold [&_small]:mt-[5px] [&_small]:block [&_small]:text-base [&_small]:text-ink-muted"
+                  <ChoiceItem
                     key={choice.id}
                     onClick={() => {
                       const next = seatParty(
@@ -817,7 +627,7 @@ export default function Home() {
                     <span
                       className={cn(
                         operationalType,
-                        'min-w-[45px] text-[26px] font-semibold',
+                        'min-w-12 text-2xl font-semibold',
                       )}
                     >
                       {choice.name}
@@ -838,19 +648,17 @@ export default function Home() {
                       </small>
                     </span>
                     <ArrowUpRight size={20} />
-                  </button>
+                  </ChoiceItem>
                 ))}
-              </div>
-              <p className="text-center text-base leading-[1.7] text-ink-muted">
-                {t('sheet.choose')}
-              </p>
+              </ChoiceList>
+              <FormFootnote>{t('sheet.choose')}</FormFootnote>
             </>
           ) : (
-            <div className={emptyState}>
-              <Users />
-              <h3>{t('sheet.noTable')}</h3>
-              <p>{t('sheet.stays')}</p>
-            </div>
+            <EmptyState
+              icon={<Users />}
+              title={t('sheet.noTable')}
+              description={t('sheet.stays')}
+            />
           )}
           <Button
             variant="tertiary"
@@ -869,7 +677,7 @@ export default function Home() {
         >
           {table.status === 'occupied' ? (
             <>
-              <div className={detailBlock}>
+              <DetailPanel>
                 <Users />
                 <h3>
                   {tableParty?.customerName || t('queue.walkin')} ·{' '}
@@ -877,13 +685,13 @@ export default function Home() {
                     count: tableParty?.partySize || table.capacity,
                   })}
                 </h3>
-                <p className={cn(detailLine, operationalType)}>
+                <DetailLine className={operationalType}>
                   <Timer aria-hidden="true" />
                   {t('detail.seatedFor', {
                     duration: duration(table.seatedAt || now, now),
                   })}
-                </p>
-                <p className={detailLine}>
+                </DetailLine>
+                <DetailLine>
                   {tableParty?.smoking ? (
                     <Cigarette aria-hidden="true" />
                   ) : (
@@ -893,11 +701,11 @@ export default function Home() {
                     t(
                       tableParty.smoking ? 'party.smoking' : 'party.nonSmoking',
                     )}
-                </p>
-                <p className={detailLine}>
+                </DetailLine>
+                <DetailLine>
                   <Phone aria-hidden="true" /> {tableParty?.phone}
-                </p>
-              </div>
+                </DetailLine>
+              </DetailPanel>
               <Button
                 className={wideButton}
                 onClick={() =>
@@ -922,16 +730,14 @@ export default function Home() {
               >
                 {t('action.finish')} <Check />
               </Button>
-              <p className="text-center text-base leading-[1.7] text-ink-muted">
-                {t('sheet.cleanHelp')}
-              </p>
+              <FormFootnote>{t('sheet.cleanHelp')}</FormFootnote>
             </>
           ) : table.status === 'cleaning' ? (
             <>
-              <div className={detailBlock}>
+              <DetailPanel>
                 <h3>{t('sheet.quickReset')}</h3>
                 <p>{t('sheet.cleanHelp')}</p>
-              </div>
+              </DetailPanel>
               <Button
                 className={wideButton}
                 onClick={() =>
@@ -951,7 +757,7 @@ export default function Home() {
             </>
           ) : table.status === 'reserved' && tableBooking ? (
             <>
-              <div className={detailBlock}>
+              <DetailPanel>
                 <h3>
                   {tableBooking.customerName} ·{' '}
                   {t('party.people', { count: tableBooking.partySize })}
@@ -963,7 +769,7 @@ export default function Home() {
                     : t('status.upcoming')}
                 </p>
                 <p>{tableBooking.notes}</p>
-              </div>
+              </DetailPanel>
               {tableBooking.status === 'upcoming' ? (
                 <Button
                   className={wideButton}
@@ -996,16 +802,15 @@ export default function Home() {
             </>
           ) : (
             <>
-              <p className="text-base font-bold tracking-[1.4px] text-ink-muted">
+              <p className="text-base font-bold tracking-wide text-ink-muted">
                 {t('sheet.waitingFits')}
               </p>
               {waiting.filter((q) => q.partySize <= table.capacity).length ? (
-                <div className="flex flex-col gap-2">
+                <ChoiceList>
                   {waiting
                     .filter((q) => q.partySize <= table.capacity)
                     .map((q) => (
-                      <button
-                        className="flex min-h-20 w-full items-center gap-[15px] rounded-xl border border-brand-orange-200 bg-brand-orange-50 p-4 text-left [&>span:nth-child(2)]:flex-1 [&_b]:text-base [&_b]:font-semibold [&_small]:mt-[5px] [&_small]:block [&_small]:text-base [&_small]:text-ink-muted"
+                      <ChoiceItem
                         key={q.id}
                         onClick={() =>
                           setModal({ type: 'seat', id: q.id, kind: 'queue' })
@@ -1022,14 +827,14 @@ export default function Home() {
                           </small>
                         </span>
                         <ArrowRight size={18} />
-                      </button>
+                      </ChoiceItem>
                     ))}
-                </div>
+                </ChoiceList>
               ) : (
-                <div className={emptyState}>
-                  <h3>{t('sheet.readyNext')}</h3>
-                  <p>{t('sheet.noFit')}</p>
-                </div>
+                <EmptyState
+                  title={t('sheet.readyNext')}
+                  description={t('sheet.noFit')}
+                />
               )}
               <Button
                 variant="tertiary"
@@ -1057,12 +862,12 @@ export default function Home() {
           description={`${t('party.people', { count: queueParty.partySize })} · ${t('queue.waiting', { count: minutes(queueParty.joinedAt, now) })}`}
           onClose={() => setModal(null)}
         >
-          <div className={cn(detailBlock, 'p-4')}>
-            <p className={detailLine}>
+          <DetailPanel compact>
+            <DetailLine>
               <Phone aria-hidden="true" />
               {t('detail.phone', { phone: queueParty.phone })}
-            </p>
-            <p className={detailLine}>
+            </DetailLine>
+            <DetailLine>
               {queueParty.smoking ? (
                 <Cigarette aria-hidden="true" />
               ) : (
@@ -1074,8 +879,8 @@ export default function Home() {
                 ),
                 area: t(queueParty.smoking ? 'area.outdoor' : 'area.indoor'),
               })}
-            </p>
-          </div>
+            </DetailLine>
+          </DetailPanel>
           <Button
             className={wideButton}
             onClick={() =>
@@ -1209,24 +1014,24 @@ export default function Home() {
               )}
             </>
           ) : (
-            <div className={detailBlock}>
-              <p className={detailLine}>
+            <DetailPanel>
+              <DetailLine>
                 <Phone aria-hidden="true" />
                 {editBooking.phone || t('detail.noPhone')}
-              </p>
-              <p className={detailLine}>
+              </DetailLine>
+              <DetailLine>
                 {editBooking.smoking ? (
                   <Cigarette aria-hidden="true" />
                 ) : (
                   <Ban aria-hidden="true" />
                 )}
                 {t(editBooking.smoking ? 'party.smoking' : 'party.nonSmoking')}
-              </p>
+              </DetailLine>
               <p>{editBooking.notes || t('detail.noNotes')}</p>
               {editBooking.assignedTableId && (
                 <p>Table {editBooking.assignedTableId}</p>
               )}
-            </div>
+            </DetailPanel>
           )}
         </Sheet>
       )}

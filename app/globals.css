@@ -118,11 +118,11 @@
   }
 
   html {
-    @apply text-base;
+    @apply text-sm;
   }
 
   body {
-    @apply m-0 bg-background font-sans text-base text-foreground;
+    @apply m-0 bg-background font-sans text-sm text-foreground;
   }
 
   button,
