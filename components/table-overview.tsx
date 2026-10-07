@@ -1,5 +1,7 @@
 import { TableCard } from '@/components/service-ui';
 import { Button } from '@/components/ui/button';
+import { operationalType } from '@/components/operational-ui';
+
 import {
   roomForTable,
   type Reservation,
@@ -8,11 +10,11 @@ import {
 } from '@/lib/restaurant';
 import type { Translate } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
-import { operationalType } from '@/components/operational-ui';
 
 export type TableGrouping = 'room' | 'area';
 export type TableFilter = 'all' | TableStatus;
 
+// Atom configuration
 const statusFilters: TableFilter[] = [
   'all',
   'available',
@@ -47,6 +49,7 @@ function StatusFilterButton({
   t: Translate;
 }) {
   const label = filter === 'all' ? t('tables.all') : t(`status.${filter}`);
+
   return (
     <Button
       variant="quinary"
@@ -86,7 +89,7 @@ export function TableGroupingSwitch({
   t: Translate;
 }) {
   return (
-    <fieldset className="m-0 inline-flex gap-1 rounded-full border-0 bg-muted p-1">
+    <fieldset className="m-0 inline-flex gap-1 rounded-xl border-0 bg-muted p-1">
       <legend className="sr-only">{t('tables.organize')}</legend>
       {(['room', 'area'] as const).map((option) => (
         <Button
@@ -134,8 +137,8 @@ export function TableOverview({
     (table) => statusFilter === 'all' || table.status === statusFilter,
   );
 
-  // Group definitions stay explicit so the restaurant can rename or reorder
-  // rooms later without changing the stored table records.
+  // Organism structure stays explicit so rooms can be renamed or reordered
+  // without changing the stored table records.
   const groups =
     grouping === 'room'
       ? (['terrace', 'main', 'side'] as const).map((key) => ({

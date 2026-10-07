@@ -48,6 +48,14 @@ Borders are reserved for controls whose boundary communicates state, such as sel
 
 ## Component boundaries
 
+The component tree follows atomic design as a navigation model, not as a reason to split every HTML element:
+
+- **Atoms** are indivisible visual treatments such as operational typography, status badges, supporting text, and form footnotes. They live in `components/atoms/`.
+- **Molecules** combine atoms into reusable task patterns such as empty states, detail panels, choice lists, party summaries, form progress, and action sheets. They live in `components/molecules/`.
+- **Organisms** compose complete product regions such as the app shell, booking calendar, table overview, and service views. Their existing domain-focused filenames remain at `components/` so product areas are easy to find.
+- Compatibility barrels may re-export layered components when an existing import path is already widely used.
+- Split a component when it has its own semantic purpose, state contract, or repeated usage. Do not create wrapper components that only rename one HTML element.
+
 - `app/page.tsx` coordinates application state and user actions.
 - `components/service-ui.tsx` owns reusable operational cards, sheets, and forms.
 - `components/app-shell.tsx` owns persistent product chrome: the service header, primary navigation, and action toast.
@@ -64,7 +72,7 @@ Borders are reserved for controls whose boundary communicates state, such as sel
 
 - The Tonight table grid uses two columns so English, Traditional Chinese, and Simplified Chinese labels can wrap without clipping.
 - The full Tables view uses three columns on wider screens and two on mobile.
-- The compact single-column layout activates at 760px and below; wider viewports retain the dashboard composition.
+- The compact single-column layout is the default; Tailwind's `md` breakpoint at 48rem switches to the dashboard composition.
 - Global page padding is owned by `main`; Tonight, Bookings, and Tables all fill that same content width instead of introducing page-specific maximum widths.
 - On Tonight, Tables spans the full dashboard row. Coming bookings and the waiting queue form the two-column row beneath it.
 - Text rows use `min-width: 0`, normal white-space, and overflow wrapping where user or translated content can grow.
@@ -72,6 +80,7 @@ Borders are reserved for controls whose boundary communicates state, such as sel
 - The calendar sits directly on the page rather than inside another bordered surface. Borders are reserved for dividers, controls that need an edge, and table status states.
 - Booking forms use three short steps (guest, preferences, then date and table) with a persistent progress indicator and action row. This avoids hiding the final action below a long scrolling form.
 - Walk-in forms reuse the first two steps so staff learn one form pattern. The native progress value, live step announcement, and evenly distributed labels expose the current position visually and to assistive technology.
+- Action sheets use a bottom tray below `md`, then become centered dialogs at `md`. They hug short tasks and use viewport-contained scrolling only when content cannot fit.
 
 ## Operational surfaces
 
@@ -86,11 +95,12 @@ Borders are reserved for controls whose boundary communicates state, such as sel
 - Required or constrained inputs set `aria-invalid` and reference their own inline error through `aria-describedby`.
 - Errors sit directly beneath the affected input and clear when the user edits that field.
 - Optional inputs do not show a validation state unless they contain invalid data.
+- Hong Kong phone numbers use one `tel` input with a fixed `+852` prefix, numeric input mode, and automatic four-plus-four grouping. This preserves paste, autofill, mobile keypad, and screen-reader behavior.
 
 ## Accessibility guardrails
 
 - Status color is supplemental to a written status and icon.
-- Selected calendar days, filters, and grouping controls expose `aria-pressed`.
+- Selected calendar days, filters, grouping controls, and form choices expose `aria-pressed`. Form-choice colors are applied through that attribute so the base button variant cannot override them.
 - Icon-only week controls have localized accessible names.
 - Motion is disabled when the device requests reduced motion.
 - Automated checks cover types, linting, and production compilation. Visual, keyboard, and assistive-technology QA remain manual checks before release.

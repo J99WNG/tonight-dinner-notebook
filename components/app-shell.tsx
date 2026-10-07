@@ -6,6 +6,7 @@ import { operationalType } from '@/components/operational-ui';
 
 export type ServiceView = 'Tonight' | 'Bookings' | 'Tables';
 
+// Primary destinations remain ordered by service workflow.
 const destinations = [
   { name: 'Tonight' as const, icon: Moon },
   { name: 'Bookings' as const, icon: CalendarDays },
@@ -31,15 +32,11 @@ export function ServiceHeader({
     <header className="mx-5 flex min-h-24 items-center gap-2 border-b border-border md:mx-12 md:min-h-28 md:gap-5">
       <div className="flex min-w-0 items-center gap-2 md:gap-3.5">
         <svg
-          className="h-12 w-10 overflow-hidden md:h-20 md:w-16"
+          className="h-10 w-auto overflow-hidden md:h-20 md:w-16"
           viewBox="0 0 640 700"
           aria-hidden="true"
         >
-          <image
-            href="supreme-roast-goose-king-logo.svg"
-            width="640"
-            height="826"
-          />
+          <image href="szh-goose.svg" width="640" height="700" />
         </svg>
         <strong className="text-xl leading-tight tracking-wide whitespace-nowrap">
           新志興訂位簿
@@ -108,7 +105,7 @@ export function PrimaryNavigation({
 }) {
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-20 flex justify-around gap-1.5 border border-b-0 border-border bg-paper px-3.5 py-1.5 shadow-lg md:inset-x-auto md:bottom-5 md:left-1/2 md:-translate-x-1/2 md:rounded-2xl md:border-b md:p-2"
+      className="fixed inset-x-0 bottom-0 z-20 flex justify-around gap-1.5 border border-b-0 border-border bg-paper p-2 shadow-lg md:inset-x-auto md:bottom-5 md:left-1/2 md:-translate-x-1/2 md:rounded-2xl md:border-b md:p-2"
       aria-label="Main navigation"
     >
       {destinations.map(({ name, icon: Icon }) => (
@@ -116,7 +113,7 @@ export function PrimaryNavigation({
           key={name}
           aria-current={currentView === name ? 'page' : undefined}
           className={cn(
-            'relative flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl border-0 bg-transparent text-base text-ink-muted md:min-h-12 md:min-w-28 md:flex-row md:gap-2',
+            'relative flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 px-5 py-3 rounded-xl border-0 bg-transparent text-base text-ink-muted md:min-h-12 md:min-w-28 md:flex-row md:gap-2',
             currentView === name &&
               'bg-brand-orange-100 font-bold text-brand-orange-800',
           )}

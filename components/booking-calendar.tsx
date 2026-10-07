@@ -1,11 +1,13 @@
 import type { ReactNode } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
-import { formatServiceDate, formatWeekRange } from '@/lib/dates';
+import { operationalType } from '@/components/operational-ui';
+
+import { formatServiceDate, formatWeekRange, hongKongToday } from '@/lib/dates';
 import type { Language, Translate } from '@/lib/i18n';
 import type { Reservation } from '@/lib/restaurant';
 import { cn } from '@/lib/utils';
-import { operationalType } from '@/components/operational-ui';
 
 /**
  * Week navigation keeps previous/next actions visually equal and places the
@@ -21,6 +23,7 @@ function WeekNavigationButton({
   onClick: () => void;
 }) {
   const Icon = direction === 'previous' ? ChevronLeft : ChevronRight;
+
   return (
     <Button
       variant="secondary"
@@ -40,13 +43,15 @@ function WeekNavigationButton({
 }
 
 /**
- * One day in the seven-day selector. The selected treatment is intentionally
- * quiet so booking density remains the most readable information.
+ * One day in the seven-day selector. Selection uses a filled surface, while
+ * an unselected current date uses an inset ring and dot so both states remain
+ * distinguishable without competing with booking density.
  */
 function CalendarDay({
   date,
   count,
   selected,
+  isToday,
   language,
   onSelect,
   t,
@@ -54,6 +59,7 @@ function CalendarDay({
   date: string;
   count: number;
   selected: boolean;
+  isToday: boolean;
   language: Language;
   onSelect: () => void;
   t: Translate;
@@ -69,11 +75,15 @@ function CalendarDay({
     <button
       className={cn(
         operationalType,
-        'flex min-h-20 w-20 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border-0 px-1.5 py-2 text-base text-foreground md:min-w-18 md:flex-1',
+        'relative flex min-h-20 w-20 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border-0 px-1.5 py-2 text-base text-foreground md:min-w-18 md:flex-1',
         selected && 'bg-paper',
+        isToday &&
+          !selected &&
+          'ring-2 ring-brand-orange-700 ring-inset after:absolute after:right-2 after:top-2 after:size-2 after:rounded-full after:bg-brand-orange-700',
       )}
       aria-pressed={selected}
-      aria-label={`${fullDate}, ${t('booking.dayCount', { count })}`}
+      aria-current={isToday ? 'date' : undefined}
+      aria-label={`${fullDate}${isToday ? `, ${t('booking.today')}` : ''}, ${t('booking.dayCount', { count })}`}
       onClick={onSelect}
     >
       <span>{formatServiceDate(date, language, { weekday: 'short' })}</span>
@@ -110,6 +120,8 @@ export function BookingCalendar({
   onToday: () => void;
   t: Translate;
 }) {
+  const today = hongKongToday();
+
   return (
     <section aria-label={t('booking.weekSchedule')}>
       <div className="mb-6 grid grid-cols-2 items-center gap-4 text-center md:grid-cols-3">
@@ -126,17 +138,19 @@ export function BookingCalendar({
           {t('booking.nextWeek')}
         </WeekNavigationButton>
       </div>
-      <div className="flex gap-2 overflow-x-auto p-0.5">
+      <div className="flex gap-2 overflow-x-auto">
         {dates.map((date) => {
           const count = reservations.filter(
             (reservation) => reservation.date === date,
           ).length;
+
           return (
             <CalendarDay
               key={date}
               date={date}
               count={count}
               selected={selectedDate === date}
+              isToday={today === date}
               language={language}
               onSelect={() => onSelectDate(date)}
               t={t}

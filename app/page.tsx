@@ -358,16 +358,16 @@ export default function Home() {
           <p
             className={cn(
               operationalType,
-              'text-xl font-bold text-brand-red-700 sm:text-3xl',
+              'text-2xl font-bold text-brand-red-700 sm:text-3xl',
             )}
           >
             {formatServiceDate(
               view === 'Bookings' ? selectedBookingDate : SERVICE_DATE,
               language,
               {
-                weekday: 'long',
+                weekday: 'short',
                 day: 'numeric',
-                month: 'long',
+                month: 'short',
               },
             )}
           </p>
@@ -470,7 +470,7 @@ export default function Home() {
                 <span>牛池灣 · 60A Lung Chi Path, Ngau Chi Wan</span>
               </div>
             </div>
-            <section className="order-1 self-start md:col-start-2 md:row-span-2 md:row-start-2">
+            <section className="order-1 w-full self-stretch md:col-start-2 md:row-span-2 md:row-start-2">
               <SectionHeading
                 heading={t('queue.title')}
                 context={t('queue.groups', { count: waiting.length })}
